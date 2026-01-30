@@ -1,0 +1,133 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif !important;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.fullWidth {
+  width: 100%;
+}
+ 
+.n-button--primary-type {
+  color: black !important;
+}
+.n-button--primary-type .flatButton {
+  color: var(--n-text-color) !important;
+}
+
+.bg-gradient {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' version='1.1' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:svgjs='http://svgjs.dev/svgjs' viewBox='0 0 800 450'%3E%3Cdefs%3E%3Cfilter id='bbblurry-filter' x='-100%25' y='-100%25' width='400%25' height='400%25' filterUnits='objectBoundingBox' primitiveUnits='userSpaceOnUse' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='130' x='0%25' y='0%25' width='100%25' height='100%25' in='SourceGraphic' edgeMode='none' result='blur'%3E%3C/feGaussianBlur%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23bbblurry-filter)'%3E%3Cellipse rx='277.5' ry='108' cx='725.3312035093011' cy='113.42677554913094' fill='hsla(47, 100%25, 50%25, 0.49)'%3E%3C/ellipse%3E%3Cellipse rx='277.5' ry='108' cx='111.37160481934211' cy='321.2030307721168' fill='hsla(144, 51%25, 52%25, 0.48)'%3E%3C/ellipse%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+
+.gradient{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' version='1.1' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:svgjs='http://svgjs.dev/svgjs' viewBox='0 0 800 450'%3E%3Cdefs%3E%3Cfilter id='bbblurry-filter' x='-100%25' y='-100%25' width='400%25' height='400%25' filterUnits='objectBoundingBox' primitiveUnits='userSpaceOnUse' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='130' x='0%25' y='0%25' width='100%25' height='100%25' in='SourceGraphic' edgeMode='none' result='blur'%3E%3C/feGaussianBlur%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23bbblurry-filter)'%3E%3Cellipse rx='277.5' ry='108' cx='725.3312035093011' cy='113.42677554913094' fill='hsla(47, 100%25, 50%25, 0.49)'%3E%3C/ellipse%3E%3Cellipse rx='277.5' ry='108' cx='111.37160481934211' cy='321.2030307721168' fill='hsla(144, 51%25, 52%25, 0.48)'%3E%3C/ellipse%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+
+.gradient-2 {
+  background-color:transparent;
+  background-image:
+  radial-gradient(at 4% 46%, hsla(144,100%,44%,1) 0px, transparent 50%),
+  radial-gradient(at 93% 29%, hsla(143,97%,37%,1) 0px, transparent 50%),
+  radial-gradient(at 36% 71%, hsla(139,0%,100%,0.10196078431372549) 0px, transparent 50%),
+  radial-gradient(at 52% 97%, hsla(41,70%,71%,1) 0px, transparent 50%),
+  radial-gradient(at 5% 29%, hsla(84,0%,100%,0.10196078431372549) 0px, transparent 50%),
+  radial-gradient(at 72% 100%, hsla(46,100%,50%,1) 0px, transparent 50%),
+  radial-gradient(at 99% 70%, hsla(138,0%,100%,0.10196078431372549) 0px, transparent 50%);
+}
+
+.shake {
+  animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.background-blur {
+  background: transparent;
+  backdrop-filter: blur(100px);
+  -webkit-backdrop-filter: blur(100px);
+  -moz-backdrop-filter: blur(100px);
+  -o-backdrop-filter: blur(100px); 
+}
+
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+.scrollable {
+  padding-bottom: 5px;
+}
+
+.scrollable::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background-color: darkgrey;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  border-radius: 100px;
+  background: var(--n-text-color);
+}
+
+.background-gradient {
+  background-color:hsla(71,100%,80%,0);
+  background-image:
+  radial-gradient(at 45% 50%, hsla(144,100%,44%,0) 0px, transparent 44%),
+  radial-gradient(at 0% 95%, hsla(144,100%,44%,0.1) 0px, transparent 44%),
+  radial-gradient(at 76% 33%, hsla(144,100%,44%,0) 0px, transparent 44%),
+  radial-gradient(at 94% 78%, hsla(144, 100%, 44%, 0.093) 0px, transparent 44%),
+  radial-gradient(at 31% 2%, hsla(46, 100%, 44%, 0.099) 0px, transparent 44%);
+}
+
+@media print {
+  body {
+    visibility: hidden;
+  }
+  #printer {
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}
+
