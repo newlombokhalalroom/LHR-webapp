@@ -247,9 +247,9 @@ onMounted(async () => {
         >
           <div class="flex flex-col items-center justify-between gap-5 md:flex-row">
             <div class="w-full">
-              <atoms-text strong>Make valuable vacation with us</atoms-text>
+              <atoms-text strong>Make an unforgettable vacation with us</atoms-text>
               <atoms-text caption
-                >Seamlessly connects with just one platform for your vacation.</atoms-text
+                >Seamlessly connect with a single platform tailored for your dream vacation.</atoms-text
               >
             </div>
             <n-button
