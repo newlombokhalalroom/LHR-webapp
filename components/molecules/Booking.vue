@@ -17,7 +17,8 @@ import {
   NTag,
   useNotification,
 } from "naive-ui";
-import moment from "moment/min/moment-with-locales";
+// import moment from "moment/min/moment-with-locales";
+import dayjs from "dayjs";
 import useVuelidate from "@vuelidate/core";
 import {
   required,
@@ -81,7 +82,8 @@ const $form = useVuelidate(
         { _field_: "Check Out Date" },
         helpers.withMessage(
           () => `Your data check-in/out invalid`,
-          (_value) => Number(moment($local.checkOut).diff(moment($local.checkIn), "days")) > 0,
+          // (_value) => Number(moment($local.checkOut).diff(moment($local.checkIn), "days")) > 0,
+          (_value) => Number(dayjs($local.checkOut).diff(dayjs($local.checkIn), "days")) > 0,
         ),
       ),
     },
