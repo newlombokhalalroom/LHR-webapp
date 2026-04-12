@@ -51,7 +51,6 @@
     "vue-router": "^4.2.5"
   },
   "dependencies": {
-    "dayjs": "^1.11.20",
     "pinia": "^2.1.7"
   },
   "overrides": {
