@@ -17,7 +17,8 @@ import {
   NTag,
   useNotification,
 } from "naive-ui";
-import moment from "moment/min/moment-with-locales";
+// import moment from "moment/min/moment-with-locales";
+import dayjs from "dayjs";
 import useVuelidate from "@vuelidate/core";
 import {
   required,
@@ -70,7 +71,7 @@ const $isRental = computed(() => ($props.target?.client?.title?.includes("car") 
 
 const $getSpesificAmenities = (_items, _target) =>
   _items.amenities?.filter((_item) =>
-    _item?.category?.toLowerCase()?.includes(_target?.toLowerCase())
+    _item?.category?.toLowerCase()?.includes(_target?.toLowerCase()),
   ) || [];
 
 const $form = useVuelidate(
@@ -81,12 +82,13 @@ const $form = useVuelidate(
         { _field_: "Check Out Date" },
         helpers.withMessage(
           () => `Your data check-in/out invalid`,
-          (_value) => Number(moment($local.checkOut).diff(moment($local.checkIn), "days")) > 0
-        )
+          // (_value) => Number(moment($local.checkOut).diff(moment($local.checkIn), "days")) > 0
+          (_value) => Number(dayjs($local.checkOut).diff(dayjs($local.checkIn), "days")) > 0,
+        ),
       ),
     },
   },
-  $local
+  $local,
 );
 
 const $filterArrByCustom = (payload, target, by = "category") =>
@@ -131,22 +133,22 @@ const $onSubmitBooking = async (_payload) => {
 
     let isAlreadyExists = Object.assign(
       {},
-      lastBooking?.find((_booking) => _booking?.client?.id === _payload?.client?.id)
+      lastBooking?.find((_booking) => _booking?.client?.id === _payload?.client?.id),
     );
     let isItemAlreadyExists = Object.assign(
       {},
-      isAlreadyExists?.orderItems?.find((_item) => _item?.id === _payload?.id)
+      isAlreadyExists?.orderItems?.find((_item) => _item?.id === _payload?.id),
     );
 
     if (isAlreadyExists) {
       lastBooking = lastBooking?.filter(
-        (_booking) => _booking?.client?.id !== isAlreadyExists?.client?.id
+        (_booking) => _booking?.client?.id !== isAlreadyExists?.client?.id,
       );
     }
 
     if (isItemAlreadyExists) {
       isAlreadyExists.orderItems = isAlreadyExists.orderItems?.filter(
-        (_item) => _item.id !== isItemAlreadyExists?.id
+        (_item) => _item.id !== isItemAlreadyExists?.id,
       );
     }
 
@@ -225,7 +227,7 @@ const $onSubmitBooking = async (_payload) => {
             <atoms-heading h3>{{ $props.target?.title }}</atoms-heading>
             <atoms-text span>{{
               $props.target?.details?.find((_detail) =>
-                _detail?.title?.toLowerCase()?.includes("driver")
+                _detail?.title?.toLowerCase()?.includes("driver"),
               )?.amount == 1
                 ? "With Driver"
                 : "Without Driver"
@@ -237,7 +239,7 @@ const $onSubmitBooking = async (_payload) => {
                 <atoms-text span>
                   {{
                     $props.target?.details?.find((_detail) =>
-                      _detail?.title?.toLowerCase()?.includes("payload")
+                      _detail?.title?.toLowerCase()?.includes("payload"),
                     )?.amount || 1
                   }}
                 </atoms-text>
@@ -248,7 +250,7 @@ const $onSubmitBooking = async (_payload) => {
                 <atoms-text span>
                   {{
                     $props.target?.details?.find((_detail) =>
-                      _detail?.title?.toLowerCase()?.includes("passenger")
+                      _detail?.title?.toLowerCase()?.includes("passenger"),
                     )?.amount || 1
                   }}
                 </atoms-text>
@@ -259,7 +261,7 @@ const $onSubmitBooking = async (_payload) => {
                 <atoms-text span>
                   {{
                     $props.target?.details?.find((_detail) =>
-                      _detail?.title?.toLowerCase()?.includes("manual")
+                      _detail?.title?.toLowerCase()?.includes("manual"),
                     )?.amount == 1
                       ? "Manual"
                       : "Automatic"
@@ -368,7 +370,7 @@ const $onSubmitBooking = async (_payload) => {
                 <div
                   v-for="(_amenity, i_amenity) in $filterArrByCustom(
                     $props.target?.amenities,
-                    'halal'
+                    'halal',
                   ) || []"
                   :key="i_amenity"
                 >
@@ -390,7 +392,7 @@ const $onSubmitBooking = async (_payload) => {
                 <div
                   v-for="(_amenity, i_amenity) in $filterArrByCustom(
                     $props.target?.amenities,
-                    'regular'
+                    'regular',
                   ) || []"
                   :key="i_amenity"
                 >
@@ -418,7 +420,7 @@ const $onSubmitBooking = async (_payload) => {
                 <div
                   v-for="(_amenity, i_amenity) in $filterArrByCustom(
                     $props.target?.amenities,
-                    $classified.Regular
+                    $classified.Regular,
                   ) || []"
                   :key="i_amenity"
                 >
@@ -439,7 +441,7 @@ const $onSubmitBooking = async (_payload) => {
                 <div
                   v-for="(_amenity, i_amenity) in $filterArrByCustom(
                     $props.target?.amenities,
-                    $classified.Excluded
+                    $classified.Excluded,
                   ) || []"
                   :key="i_amenity"
                 >
