@@ -31,10 +31,10 @@ const { $createError } = useError();
 const { $isClientSide, $addSeparator, $lazyFetchBasedOnViewport } = useNuxtApp();
 const $title = ref("Lombok Halal Room");
 const $description = ref(
-  "Lombok Halal Room stands as an exclusive travel application, uniquely tailored to cater to Muslim-friendly destinations exclusively within the captivating realm of Lombok. As a specialized platform, it seamlessly connects travelers with accommodations that meticulously align with Islamic principles."
+  "Lombok Halal Room stands as an exclusive travel application, uniquely tailored to cater to Muslim-friendly destinations exclusively within the captivating realm of Lombok. As a specialized platform, it seamlessly connects travelers with accommodations that meticulously align with Islamic principles.",
 );
 const $image = ref(
-  "https://firebasestorage.googleapis.com/v0/b/lombok-halal-room-sandbox.appspot.com/o/assets%2Fhero.png?alt=media&token=e9fda99f-ecd3-40df-9932-13595ae16742"
+  "https://firebasestorage.googleapis.com/v0/b/lombok-halal-room-sandbox.appspot.com/o/assets%2Fhero.png?alt=media&token=e9fda99f-ecd3-40df-9932-13595ae16742",
 );
 const $local = reactive({
   showBooking: null,
@@ -112,7 +112,6 @@ const $onFetchHotel = async (_payload) => {
     // console.log($local.hotelData);
     $local.hotelLoading = false;
   }
-};
 
 const $onFetchDestination = async (_payload) => {
   $local.destinationLoading = true;
@@ -141,7 +140,7 @@ watch(
         category: $local.selectedDestinationCategory,
       });
     }
-  }
+  },
 );
 
 onMounted(async () => {
@@ -274,7 +273,7 @@ onMounted(async () => {
             >
               <div
                 v-for="(_item, _iitem) in $local.currentBooking?.flatMap(
-                  (_item) => _item?.orderItems
+                  (_item) => _item?.orderItems,
                 )"
                 :key="_iitem"
                 class="shadow-xl hover:shadow-sm rounded-md overflow-hidden cursor-pointer transition-all duration-300 ease-out bg-white dark:bg-black-pure w-[350px] h-[125px]"
@@ -476,10 +475,10 @@ onMounted(async () => {
                             v-for="(_product_amentities, _ipa) in _item.amenities?.length > 10
                               ? [
                                   ...(_item.amenities?.filter(
-                                    (_item) => _item.category == 'halal'
+                                    (_item) => _item.category == 'halal',
                                   ) || []),
                                   ...(_item.amenities?.filter(
-                                    (_item) => _item.category != 'halal'
+                                    (_item) => _item.category != 'halal',
                                   ) || []),
                                 ]?.slice(0, 10)
                               : _item.amenities?.slice(0, 10)"
