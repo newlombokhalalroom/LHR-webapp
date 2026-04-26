@@ -70,7 +70,7 @@ onMounted(() => {
   <atoms-container class="!pt-0">
     <atoms-image
       :alt="`image of ${$props?.data?.title}`"
-      :src="$props?.data?.client?.picture"
+      :src="$props?.data?.pictures?.[0]?.picture"
       class="w-full h-[250px]"
       position="left bottom"
     >
@@ -87,7 +87,7 @@ onMounted(() => {
         <div class="grid grid-cols-2 overflow-hidden h-full">
           <atoms-image-native
             v-for="(_picture, i_picture) in Array.from(Array(4).keys())?.map(
-              (_item) => $props?.data?.pictures?.[_item - 1] || _item
+              (_item) => $props?.data?.pictures?.[_item - 1] || _item,
             )"
             :key="i_picture"
             :src="$props.data.picture"
@@ -191,7 +191,7 @@ onMounted(() => {
                   <div
                     v-for="(_amenity, i_amenity) in $filterArrByCustom(
                       $props?.data?.amenities,
-                      'halal'
+                      'halal',
                     ) || []"
                     :key="i_amenity"
                   >
@@ -213,7 +213,7 @@ onMounted(() => {
                   <div
                     v-for="(_amenity, i_amenity) in $filterArrByCustom(
                       $props?.data?.amenities,
-                      'regular'
+                      'regular',
                     ) || []"
                     :key="i_amenity"
                   >
@@ -293,7 +293,7 @@ onMounted(() => {
                     :disabled="$dataUser?.scope?.includes('admin')"
                     @click="
                       router.push(
-                        `/hotel/${$props.data.client?.id}`?.replaceAll('car-rent', 'rental')
+                        `/hotel/${$props.data.client?.id}`?.replaceAll('car-rent', 'rental'),
                       )
                     "
                     >More about the {{ $props.data.client?.title }}</n-button
@@ -309,7 +309,7 @@ onMounted(() => {
                     :disabled="$dataUser?.scope?.includes('admin')"
                     @click="
                       router.push(
-                        `/hotel/${$props.data.client?.id}`?.replaceAll('car-rent', 'rental')
+                        `/hotel/${$props.data.client?.id}`?.replaceAll('car-rent', 'rental'),
                       )
                     "
                     >More about the {{ $props.data.client?.title }}</n-button
