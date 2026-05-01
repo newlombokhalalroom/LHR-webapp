@@ -112,6 +112,7 @@ const $onFetchHotel = async (_payload) => {
     // console.log($local.hotelData);
     $local.hotelLoading = false;
   }
+};
 
 const $onFetchDestination = async (_payload) => {
   $local.destinationLoading = true;
