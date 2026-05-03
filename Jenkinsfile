@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Konfigurasi Image & Kredensial
         DOCKER_IMAGE = "lombokhalalroom/lombok-halal-room-web-app-jenkins"
         REGISTRY_CRED = "dockerhub-credentials" 
         SSH_CRED = "vps-ssh-key"               

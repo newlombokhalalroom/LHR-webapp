@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   webapp:
-    image: lombokhalalroom/lombok-halal-room-web-app:latest
+    image: lombokhalalroom/lombok-halal-room-web-app-jenkins:latest
     container_name: lhr-webapp-jenkins
     restart: always
     ports:
