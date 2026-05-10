@@ -26,6 +26,7 @@ const { $greeting } = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
 const $breakpoint = useBreakpoint();
+const { $createError } = useErrorHandler();
 
 const $local = reactive({
   mainLoading: false,
@@ -169,7 +170,7 @@ definePageMeta({
             ></atoms-image-native>
             <div
               class="col-span-full md:col-span-4 p-5"
-              @click.stop="router.push({ path: '/tour/' + _item.id })"
+              @click.stop="router.push({ path: `/admin/${$userStore.getClientTypeApp}/packages/${_product.id}` })"
             >
               <div class="grid grid-cols-2">
                 <div class="col-span-1 flex flex-col h-full">
@@ -196,12 +197,12 @@ definePageMeta({
                         key: 1,
                         props: {
                           onClick: () =>
-                            router.push(`/admin/${$userStore.getClientTypeApp}/packages/detail`),
+                            router.push(`/admin/${$userStore.getClientTypeApp}/packages/${_product.id}`),
                         },
                       },
                     ]"
                   >
-                    <atoms-icon class="!rounded-full" name="dots-vertical"></atoms-icon>
+                    <n-button size="small" secondary round type="primary">package detail</n-button>
                   </n-dropdown>
                 </div>
               </div>

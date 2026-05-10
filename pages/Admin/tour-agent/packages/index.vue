@@ -189,7 +189,7 @@ definePageMeta({
             <div
               class="col-span-full md:col-span-4 p-5"
               @click.stop="
-                router.push(`/admin/${$userStore.getClientTypeApp}/packages/${_item.id}`)
+                router.push(`/admin/${$userStore.getClientTypeApp}/packages/${_product.id}`)
               "
             >
               <div class="grid grid-cols-2">
@@ -218,13 +218,13 @@ definePageMeta({
                         props: {
                           onClick: () =>
                             router.push(
-                              `/admin/${$userStore.getClientTypeApp}/packages/${_item.id}`
+                              `/admin/${$userStore.getClientTypeApp}/packages/${_product.id}`
                             ),
                         },
                       },
                     ]"
                   >
-                    <atoms-icon class="!rounded-full" name="dots-vertical"></atoms-icon>
+                    <n-button size="small" secondary round type="primary" class="!text-primary">package detail</n-button>
                   </n-dropdown>
                 </div>
               </div>

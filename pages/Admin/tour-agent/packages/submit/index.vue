@@ -19,6 +19,7 @@ import { useDetailStore } from "@/store/detail";
 import { useProductStore } from "@/store/product";
 import { useUserStore } from "@/store/user";
 import { storeToRefs } from "pinia";
+import moment from "moment";
 
 const $detailStore = useDetailStore();
 const { data: $dataDetail } = storeToRefs($detailStore);
@@ -61,6 +62,7 @@ const $local = reactive({
 
   days: null,
   nights: null,
+  update: null,
 });
 
 const $classified = {
@@ -85,6 +87,7 @@ const $model = reactive({
     trip_type: "Open trip",
   },
   itineraries: [],
+  schedules: [],
 });
 
 const $filterArrByCustom = (payload, target, by = "category") =>
@@ -140,6 +143,12 @@ const $form = useVuelidate(
     // policies: {
     //   required,
     // },
+    schedules: {
+      custom: helpers.withMessage(
+        () => `Required minimum of 1 schedule for Open trip`,
+        (_value) => $model.trip_detail.trip_type !== 'Open trip' || $model.schedules?.length > 0
+      ),
+    },
   },
   $model
 );
@@ -280,6 +289,12 @@ const $onReset = async () => {
       $model[_target] = null;
     }
   });
+  $model.itineraries = [];
+  $model.schedules = [];
+  await $onResetDetails();
+};
+
+const $onResetDetails = async () => {
   await $onFetchDetail();
   await $onFetchHalalService();
   await $onFetchInclusion();
@@ -400,9 +415,10 @@ const $onSubmit = async () => {
       content: `Your package (${_body.title}) was successfully saved`,
     });
 
-    $onReset();
-    router.push({ path: "/admin" });
+    // $onReset();
+    router.push({ path: `/admin/${$userStore.getClientTypeApp}/packages` });
   } catch (error) {
+    console.error("Submit Error:", error);
     $createError(error);
   } finally {
     $local.mainLoading = false;
@@ -430,6 +446,12 @@ onMounted(async () => {
         // UPDATE US-03 - KISUL
         $model.trip_detail = _resp?.result?.trip_detail || { trip_type: 'Open trip' };
         $model.itineraries = _resp?.result?.itineraries || [];
+        $model.schedules = (_resp?.result?.schedules || []).map((sch) => ({
+          ...sch,
+          departure_date: sch.departure_date ? moment(sch.departure_date).format("YYYY-MM-DD") : null,
+          return_date: sch.return_date ? moment(sch.return_date).format("YYYY-MM-DD") : null,
+        }));
+        $local.update = _resp.result;
       } else {
         throw new Error("Failed to get package");
       }
@@ -476,7 +498,12 @@ definePageMeta({
   </molecules-modal>
   <atoms-container>
     <br />
-    <atoms-heading h2>{{ route.params.id ? "Update" : "Add" }} Package</atoms-heading>
+    <div class="flex items-center gap-4">
+      <n-button quaternary circle @click="router.back()">
+        <template #icon><atoms-icon name="arrow-left" /></template>
+      </n-button>
+      <atoms-heading h2>{{ route.params.id ? "Update" : "Add" }} Package</atoms-heading>
+    </div>
     <br />
     <n-form id="submit-main-form" @submit.prevent="$onSubmit">
       <section class="grid grid-cols-1 md:grid-cols-2 md:gap-x-5">
@@ -648,6 +675,70 @@ definePageMeta({
               </div>
             </div>
           </n-card>
+        </div>
+      </section>
+
+      <!-- Open Trip Schedules -->
+      <section v-if="$model.trip_detail.trip_type === 'Open trip'">
+        <n-divider title-placement="left" class="col-span-full">
+          <atoms-text span>Open Trip Schedules & Quotas</atoms-text>
+        </n-divider>
+        
+        <div class="col-span-full space-y-4">
+          <div class="flex items-center justify-between">
+            <atoms-text caption>Add dates and available seats for this public trip.</atoms-text>
+            <n-button 
+              type="primary" 
+              size="small" 
+              @click="$model.schedules.push({ departure_date: null, return_date: null, total_quota: 10 })"
+              :disabled="$local.mainLoading"
+            >
+              + Add Date Range
+            </n-button>
+          </div>
+
+          <div v-if="$model.schedules?.length === 0" class="text-center p-8 border-2 border-dashed border-gray-200 rounded-lg dark:border-gray-700">
+            <atoms-text caption class="!text-red-500" v-if="$form.schedules.$error">
+              {{ $form.schedules.$errors[0].$message }}
+            </atoms-text>
+            <atoms-text caption v-else>No schedules added yet. Required for Open Trip.</atoms-text>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <n-card v-for="(sch, index) in $model.schedules" :key="index" size="small" class="bg-primary/5 border-primary/20">
+              <template #header>
+                <div class="flex justify-between items-center w-full">
+                  <atoms-text strong>Schedule #{{ index + 1 }}</atoms-text>
+                  <n-button type="error" text @click="$model.schedules.splice(index, 1)">
+                    <atoms-icon name="close" :size="18" />
+                  </n-button>
+                </div>
+              </template>
+              
+              <div class="space-y-3">
+                <atoms-input-date 
+                  v-model:formatted-value="sch.departure_date" 
+                  value-format="yyyy-MM-dd"
+                  type="date"
+                  label="Departure Date" 
+                  required 
+                />
+                <atoms-input-date 
+                  v-model:formatted-value="sch.return_date" 
+                  value-format="yyyy-MM-dd"
+                  type="date"
+                  label="Return Date" 
+                  required 
+                />
+                <atoms-input-number 
+                  v-model:value="sch.total_quota" 
+                  label="Total Quota (Seats)" 
+                  :min="1" 
+                  required 
+                />
+              </div>
+            </n-card>
+          </div>
         </div>
       </section>
 
