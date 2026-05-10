@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
   webapp:
-    image: lombokhalalroom/lombok-halal-room-web-app-jenkins:latest
-    container_name: lhr-webapp-jenkins
+    image: lombokhalalroom/lombok-halal-room-web-app:latest
+    container_name: lhr-webapp
     restart: always
     ports:
       - "3001:3001"
