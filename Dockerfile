@@ -1,6 +1,6 @@
 # Stage 1: Build
-FROM node:22-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@latest --activate
+FROM node:20-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@8.15.4 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -8,7 +8,7 @@ COPY . .
 RUN pnpm build
 
 # Stage 2: Run
-FROM node:22-alpine
+FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app/.output /app/.output
 
