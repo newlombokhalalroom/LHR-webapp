@@ -53,7 +53,7 @@ const { data, pending } = await useLazyAsyncData(
   {
     transform: (payload) => payload?.result || null,
     watch: false,
-  }
+  },
 );
 
 provide("$setShowBooking", (_payload) => {

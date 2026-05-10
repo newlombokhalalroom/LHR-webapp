@@ -251,16 +251,23 @@ const $onSubmit = async (e) => {
     const clientId = v4();
     const userId = v4();
 
+    // Upload picture first if exists
+    let uploadedPictureUrl = null;
+    if ($model.picture?.rawSource) {
+      uploadedPictureUrl = await $uploadFile(
+        $model.picture.rawSource,
+        `users/${userId}`,
+        "picture"
+      );
+    }
+
     // todo:register user as admin
     const _respUser = await $userStore.post("admins", {
       id: userId,
       username: $trim($model.username)?.replaceAll(" ", "_"),
       email: $trim($model.email),
       password: $trim($model.password),
-      picture:
-        ($model.picture?.rawSource &&
-          (await $uploadFile($model.picture.rawSource, `users/${userId}`, "picture"))) ||
-        null,
+      picture: uploadedPictureUrl || null,
     });
 
     if (!_respUser?.result?.userId) {
@@ -282,6 +289,7 @@ const $onSubmit = async (e) => {
       phone: $trim($model.phone),
       npwp: $trim($model.npwp),
       description: $trim($model.description),
+      picture: uploadedPictureUrl || null,
     });
 
     if (!_respClient?.result?.clientId) {

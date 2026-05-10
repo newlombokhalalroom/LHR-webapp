@@ -94,12 +94,13 @@ const $onFetchHotel = async (_payload) => {
   try {
     const _resp = await $productStore.get(null, {
       params: {
-        filter: JSON.stringify({
-          where:
-            "types.title = 'hotel' and products.client_id = '7641af15-3940-447d-b2f9-d5c80988c00c'",
-          order: "products._created_date ASC",
-        }),
-        limit: 5,
+        filter: {
+          where: {
+            "types.title": "Hotel",
+          },
+          order: ["products._created_date ASC"],
+          limit: 3,
+        },
       },
     });
     $local.hotelData = _resp.result;
@@ -256,8 +257,8 @@ onMounted(async () => {
             <n-button
               type="primary"
               class="w-full md:w-auto"
-              @click.stop="navigateTo({ path: '/authentication' })"
-              >Join Now</n-button
+              @click.stop="navigateTo({ path: $dataUser ? '/destination' : '/authentication' })"
+              >{{ $dataUser ? "Explore Destinations" : "Join Now" }}</n-button
             >
           </div>
         </n-card>
