@@ -3,7 +3,7 @@ FROM node:22-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+RUN pnpm config set only-allow-trusted-dependencies false && pnpm install
 COPY . .
 RUN pnpm build
 
