@@ -314,9 +314,9 @@ watch(
 
 watch(
   () => $props.value,
-  () => {
-    if ($props.value) {
-      $editor.value.commands.setContent($props.value);
+  (newValue) => {
+    if (newValue && newValue !== $editor.value?.getHTML()) {
+      $editor.value.commands.setContent(newValue);
       // $editor.value.commands.selectAll();
       // $editor.value.chain().focus().setFontFamily("Plus Jakarta Sans").run();
     }

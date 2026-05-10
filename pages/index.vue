@@ -248,9 +248,10 @@ onMounted(async () => {
         >
           <div class="flex flex-col items-center justify-between gap-5 md:flex-row">
             <div class="w-full">
-              <atoms-text strong>Make valuable vacation with us</atoms-text>
+              <atoms-text strong>Make an unforgettable vacation with us</atoms-text>
               <atoms-text caption
-                >Seamlessly connects with just one platform for your vacation.</atoms-text
+                >Seamlessly connect with a single platform tailored for your dream
+                vacation.</atoms-text
               >
             </div>
             <n-button
@@ -428,7 +429,10 @@ onMounted(async () => {
           <div class="flex items-center gap-2">
             <div>
               <atoms-heading h5>Best places to stay</atoms-heading>
-              <atoms-text>We've got many kind of villas and hotels just for you to stay</atoms-text>
+              <atoms-text
+                >Discover our handpicked selection of premium villas and hotels for your perfect
+                halal getaway.</atoms-text
+              >
             </div>
           </div>
         </section>
