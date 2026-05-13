@@ -179,7 +179,7 @@ onMounted(async () => {
             >
               <div class="p-5 mt-auto space-y-2">
                 <atoms-heading>Destination</atoms-heading>
-                <atoms-text>📌 Located at Sade Village, Pujut District, Central Lombok </atoms-text>
+                <atoms-text>📌 Located at Sade Village, Pujut District </atoms-text>
               </div>
             </div>
           </section>
