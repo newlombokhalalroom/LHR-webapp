@@ -1,6 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: "2025-10-22", 
+  compatibilityDate: "2025-10-22",
+
+  ssr: false, // Wajib dimatikan karena Naive UI menggunakan browser API
 
   devtools: { enabled: true },
 
@@ -25,12 +27,8 @@ export default defineNuxtConfig({
 
   build: {
     transpile: [
-      // Transpile untuk development DAN production
       "mdi-vue",
       "print-js",
-      "naive-ui",
-      "vueuc",
-      "date-fns",
       "@juggle/resize-observer",
       "@css-render/plugin-bem",
       "@css-render/vue3-ssr",

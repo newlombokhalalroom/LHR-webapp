@@ -38,7 +38,7 @@ const {
   $provinceType,
   $cityTypes,
 } = useNuxtApp();
-const { $createError } = useError();
+const { $createError } = useCustomError();
 const $breakpoint = useBreakpoint();
 const $loadingBar = useLoadingBar();
 const router = useRouter();
@@ -80,7 +80,7 @@ const $form = useVuelidate(
       required,
     },
   },
-  $location
+  $location,
 );
 
 const $onFetchMain = async (_body, _path = null) => {
@@ -95,7 +95,7 @@ const $onFetchMain = async (_body, _path = null) => {
     if ($local.data?.clientLocation?.latitude && $local.data?.clientLocation?.longitude) {
       $location.target = await $getGeolocation(
         $local.data?.clientLocation?.latitude,
-        $local.data?.clientLocation?.longitude
+        $local.data?.clientLocation?.longitude,
       );
       $location.address = $local.data?.clientLocation?.address;
       $location.province = $local.data?.clientLocation?.province;
@@ -204,7 +204,7 @@ const $uploadProfilePicture = async (_payload) => {
     const _picture = await $uploadFile(
       _payload.rawSource,
       `clients/${$dataUser.value?.client?.id}`,
-      `picture-${new Date().getTime()}${v4()}`
+      `picture-${new Date().getTime()}${v4()}`,
     );
 
     await $onUpdate({
@@ -224,18 +224,18 @@ const $uploadPictures = async (_payload) => {
           url: await $uploadFile(
             _item.rawSource,
             `clients/${$dataUser.value?.client?.id}`,
-            `picture-${new Date().getTime()}${v4()}`
+            `picture-${new Date().getTime()}${v4()}`,
           ),
           title: $dataUser.value?.client?.name,
           description: "Picture of " + $dataUser.value?.client?.name,
-        }))
+        })),
       );
 
       await Promise.all(
         _payload?.map(async (_item) => {
           await $onInsert(_item, "pictures", false);
           return _item;
-        })
+        }),
       ).then(() => {
         $notification.success({
           title: "Status",
@@ -347,7 +347,7 @@ watch(
       $onFetchAnotherFacilities();
       $onFetchAnotherPolicies();
     }
-  }
+  },
 );
 
 watch(
@@ -358,7 +358,7 @@ watch(
       // $location.province = _val?.[0]?.address?.state;
       // $location.city = _val?.[0]?.address?.citys;
     }
-  }
+  },
 );
 
 watch(
@@ -366,7 +366,7 @@ watch(
   (_val) => {
     if (_val) $loadingBar.start();
     else setTimeout(() => $loadingBar.finish(), 500);
-  }
+  },
 );
 
 onMounted(() => {
@@ -522,22 +522,21 @@ definePageMeta({
           <n-skeleton :repeat="2" width="50%"></n-skeleton>
         </div>
         <div v-else class="flex gap-5 space-y-2">
-          <div class="ring-5 ring-primary">
+          <div class="ring-5 ring-primary relative group" style="width: 150px; height: 150px">
             <atoms-avatar
               ref="$refPicture"
               class="cursor-pointer dark:!bg-black bg-white"
               :src="$dataUser?.client?.picture"
               sizes="150"
               nickname="account"
+            />
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center w-full h-full gap-2 bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             >
-              <div
-                class="absolute flex flex-col items-center justify-center w-full h-full gap-2 bg-black bg-opacity-25"
+              <n-button size="tiny" type="primary" @click="$local.openProfilePictureEditor = true"
+                >Update Picture</n-button
               >
-                <n-button size="tiny" type="primary" @click="$local.openProfilePictureEditor = true"
-                  >Update Picture</n-button
-                >
-              </div>
-            </atoms-avatar>
+            </div>
           </div>
           <div>
             <Head>
@@ -679,7 +678,7 @@ definePageMeta({
                               {
                                 facilities: [_facility.title],
                               },
-                              'facilities'
+                              'facilities',
                             );
                           }
                         }
@@ -723,14 +722,14 @@ definePageMeta({
                       () => {
                         if ($window.confirm('Are you sure? this cannot be undone')) {
                           $local.data.clientFacilities = $local.data.clientFacilities?.filter(
-                            (__item) => __item?.id !== _item.id
+                            (__item) => __item?.id !== _item.id,
                           );
 
                           $onDelete(
                             {
                               facility: _item.title,
                             },
-                            'facilities'
+                            'facilities',
                           );
                         }
                       }
@@ -862,7 +861,7 @@ definePageMeta({
                                     },
                                   ],
                                 },
-                                'policies'
+                                'policies',
                               );
                             }
                           }
@@ -902,7 +901,7 @@ definePageMeta({
                         () => {
                           if ($window.confirm('Are you sure? this cannot be undone')) {
                             $local.data.policies = $local.data.policies?.filter(
-                              (__item) => __item?.policy_id !== _item.id
+                              (__item) => __item?.policy_id !== _item.id,
                             );
                             $onDelete(null, `policies/${_item.policy_id}`);
                           }
@@ -971,7 +970,7 @@ definePageMeta({
                             {
                               id: _file.id,
                             },
-                            `pictures`
+                            `pictures`,
                           );
                         }
                       }
