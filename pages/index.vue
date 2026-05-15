@@ -197,7 +197,7 @@ onMounted(async () => {
             >
               <div class="p-5 mt-auto space-y-2">
                 <atoms-heading h3>Halal Travel</atoms-heading>
-                <atoms-text>Islamic Center Mosque, Mataram</atoms-text>
+                <atoms-text>Islamic Center Mosque</atoms-text>
               </div>
             </div>
           </section>
