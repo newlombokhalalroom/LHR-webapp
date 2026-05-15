@@ -179,7 +179,7 @@ onMounted(async () => {
             >
               <div class="p-5 mt-auto space-y-2">
                 <atoms-heading>Destination</atoms-heading>
-                <atoms-text>📌 Located at Sade Village, Pujut District </atoms-text>
+                <atoms-text>📌 Located at Sade Village, Pujut District, Central Lombok </atoms-text>
               </div>
             </div>
           </section>
@@ -197,7 +197,7 @@ onMounted(async () => {
             >
               <div class="p-5 mt-auto space-y-2">
                 <atoms-heading h3>Halal Travel</atoms-heading>
-                <atoms-text>Islamic Center Mosque</atoms-text>
+                <atoms-text>Islamic Center Mosque, Sesele</atoms-text>
               </div>
             </div>
           </section>
