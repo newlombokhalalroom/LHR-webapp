@@ -257,8 +257,8 @@ onMounted(async () => {
             <n-button
               type="primary"
               class="w-full md:w-auto"
-              @click.stop="navigateTo({ path: '/authentication' })"
-              >{{ "Join Now" }}</n-button
+              @click.stop="navigateTo({ path: $dataUser ? '/destination' : '/authentication' })"
+              >{{ $dataUser ? "Explore Destination" : "Join Now" }}</n-button
             >
           </div>
         </n-card>
