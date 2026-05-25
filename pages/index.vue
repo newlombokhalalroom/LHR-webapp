@@ -540,7 +540,7 @@ onMounted(async () => {
         <br />
         <n-button @click="navigateTo({ path: '/hotel' })">See more</n-button>
       </section>
-      <br />
+      
 
       <!-- other -->
       <section class="p-5 border-2 border-opacity-50 border-dashed rounded-md border-primary">
