@@ -521,7 +521,7 @@ onMounted(async () => {
                             >IDR {{ $addSeparator(_item.price || 0) }}/{{
                               _item.units || "rent"
                             }}</atoms-text
-                      
+                          >
                         </n-tag>
                       </div>
                     </div>
