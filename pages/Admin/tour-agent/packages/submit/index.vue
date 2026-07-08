@@ -1,11 +1,15 @@
 <script setup>
 import {
   NForm,
+  NFormItem,
+  NInput,
+  NModal,
   NButton,
   NTag,
   NDivider,
   NSkeleton,
   useNotification,
+  useMessage,
   NScrollbar,
   NCard,
   useLoadingBar,
@@ -37,6 +41,7 @@ const { $removeSeparator, $addSeparator, $uploadFile, $debounce, $window } = use
 const $breakpoint = useBreakpoint();
 const $loadingBar = useLoadingBar();
 const $notification = useNotification();
+const $message = useMessage();
 const $accept = "image/png, image/jpeg, image/jpg, image/gif";
 const $uploadAttachment = ref(null);
 const $local = reactive({
@@ -163,7 +168,6 @@ const $price = computed({
 });
 
 // amenities
-
 const $onFetchAmenities = async (_payload) => {
   let _resp = null;
   $local.mainLoading = true;
@@ -238,6 +242,56 @@ const $onFetchExclusion = async () => {
     $createError(error);
   } finally {
     $local.mainLoading = false;
+  }
+};
+
+// Add new amenity logic
+const $addAmenityModal = reactive({
+  show: false,
+  saving: false,
+  title: '',
+  category: '',
+});
+
+const $openAddAmenity = (category) => {
+  $addAmenityModal.title = '';
+  $addAmenityModal.category = category;
+  $addAmenityModal.show = true;
+};
+
+const $onAddAmenitySubmit = async () => {
+  if (!$addAmenityModal.title) return $message.warning("Please enter a title");
+  $addAmenityModal.saving = true;
+  try {
+    const payload = {
+      title: $addAmenityModal.title,
+      category: $addAmenityModal.category,
+      type: $userStore.getClientType,
+    };
+    const res = await $api.post("/super-admin/amenities", payload);
+    if (res?.status) {
+      $message.success("Successfully added!");
+      $addAmenityModal.show = false;
+      
+      const newAmenity = res.result?.amenity || payload;
+      if ($addAmenityModal.category === $classified.Halal) {
+        await $onFetchHalalService();
+        const added = $local.dataHalalService?.find(a => a.title === newAmenity.title);
+        if (added) $model.amenities = [...($model.amenities || []), added];
+      } else if ($addAmenityModal.category === $classified.Regular) {
+        await $onFetchInclusion();
+        const added = $local.dataInclusion?.find(a => a.title === newAmenity.title);
+        if (added) $model.amenities = [...($model.amenities || []), added];
+      } else if ($addAmenityModal.category === $classified.Excluded) {
+        await $onFetchExclusion();
+        const added = $local.dataExclusion?.find(a => a.title === newAmenity.title);
+        if (added) $model.amenities = [...($model.amenities || []), added];
+      }
+    }
+  } catch (error) {
+    $createError(error);
+  } finally {
+    $addAmenityModal.saving = false;
   }
 };
 
@@ -745,7 +799,10 @@ definePageMeta({
       <!-- halal service -->
       <section>
         <n-divider title-placement="left" class="col-span-full">
-          <atoms-text span>Halal Service</atoms-text>
+          <div class="flex items-center gap-3">
+            <atoms-text span>Halal Service</atoms-text>
+            <n-button size="small" type="primary" @click="$openAddAmenity($classified.Halal)">+ Add New</n-button>
+          </div>
         </n-divider>
         <atoms-input
           :disabled="$local.mainLoading"
@@ -852,7 +909,10 @@ definePageMeta({
       <!-- inclusion -->
       <section>
         <n-divider title-placement="left" class="col-span-full">
-          <atoms-text span>Tour Inclusion</atoms-text>
+          <div class="flex items-center gap-3">
+            <atoms-text span>Tour Inclusion</atoms-text>
+            <n-button size="small" type="primary" @click="$openAddAmenity($classified.Regular)">+ Add New</n-button>
+          </div>
         </n-divider>
         <atoms-input
           :disabled="$local.mainLoading"
@@ -963,7 +1023,10 @@ definePageMeta({
       <!-- exclusion -->
       <section>
         <n-divider title-placement="left" class="col-span-full">
-          <atoms-text span>Tour Exclusion</atoms-text>
+          <div class="flex items-center gap-3">
+            <atoms-text span>Tour Exclusion</atoms-text>
+            <n-button size="small" type="primary" @click="$openAddAmenity($classified.Excluded)">+ Add New</n-button>
+          </div>
         </n-divider>
         <atoms-input
           :disabled="$local.mainLoading"
@@ -1132,18 +1195,18 @@ definePageMeta({
         </section>
         <section>
           <section
-            v-if="$filterArrByCustom($model.policies, $classified.Regular)?.length > 0"
+            v-if="$model.policies?.length > 0"
             class="col-span-full space-y-2"
           >
             <n-card
-              v-for="(_item, _iitem) in $filterArrByCustom($model.policies, $classified.Regular)"
+              v-for="(_item, _iitem) in $model.policies"
               :key="_iitem"
               size="small"
             >
               <div class="grid grid-cols-2">
                 <div class="col-span-1">
                   <atoms-text strong class="capitalize">{{ _item.title }}</atoms-text>
-                  <atoms-text caption>Category : {{ _item.category }}</atoms-text>
+                  <atoms-text caption>{{ _item.details }}</atoms-text>
                 </div>
                 <div class="col-span-1 flex justify-end gap-2">
                   <atoms-icon
@@ -1151,7 +1214,7 @@ definePageMeta({
                     name="close"
                     :disabled="$local.mainLoading"
                     :size="20"
-                    @click="$model.policies = $model.policies?.filter((_it) => _it.id !== _item.id)"
+                    @click="$model.policies = $model.policies?.filter((_it) => _it.title !== _item.title)"
                   ></atoms-icon>
                 </div>
               </div>
@@ -1247,5 +1310,23 @@ definePageMeta({
 
     <br />
     <br />
+
+    <!-- Modal Add Amenity -->
+    <n-modal v-model:show="$addAmenityModal.show" preset="dialog" title="Add New Facility">
+      <n-form label-placement="top">
+        <n-form-item label="Title">
+          <n-input v-model:value="$addAmenityModal.title" placeholder="e.g. Free Wifi, Makan Siang" />
+        </n-form-item>
+        <n-form-item label="Category">
+          <n-input :value="$addAmenityModal.category.toUpperCase()" disabled />
+        </n-form-item>
+      </n-form>
+      <template #action>
+        <n-button @click="$addAmenityModal.show = false">Cancel</n-button>
+        <n-button type="primary" class="ml-2" :loading="$addAmenityModal.saving" @click="$onAddAmenitySubmit">
+          Add
+        </n-button>
+      </template>
+    </n-modal>
   </atoms-container>
 </template>

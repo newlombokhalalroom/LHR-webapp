@@ -33,7 +33,23 @@ const { $createError } = useErrorHandler();
 const $local = reactive({
   mainLoading: false,
   data: null,
+  deleteLoading: false,
 });
+
+const $onDeletePackage = async () => {
+  if (confirm("Are you sure you want to delete this package? This action cannot be undone.")) {
+    $local.deleteLoading = true;
+    try {
+      await $productStore.delete(route.params.id);
+      $message.success("Package deleted successfully");
+      router.push(`/admin/${$userStore.getClientTypeApp}/packages`);
+    } catch (error) {
+      $createError(error);
+    } finally {
+      $local.deleteLoading = false;
+    }
+  }
+};
 
 const $onFetchMain = async () => {
   $local.mainLoading = true;
@@ -252,8 +268,13 @@ definePageMeta({
                 <n-button block type="primary" @click="router.push(`/admin/${$userStore.getClientTypeApp}/packages/submit/${$local.data.id}`)">
                   Edit Package Information
                 </n-button>
-                <n-button block type="info">
-                  Copy Booking Link
+                <n-button 
+                  block 
+                  type="error" 
+                  :loading="$local.deleteLoading"
+                  @click="$onDeletePackage"
+                >
+                  Delete Package
                 </n-button>
               </n-space>
             </n-card>

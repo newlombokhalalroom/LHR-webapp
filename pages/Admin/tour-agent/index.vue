@@ -11,6 +11,8 @@ import {
   NStatistic,
   NNumberAnimation,
   NSpace,
+  NGi,
+  NGrid,
   useNotification,
 } from "naive-ui";
 import moment from "moment";
@@ -27,11 +29,14 @@ const route = useRoute();
 const router = useRouter();
 const $breakpoint = useBreakpoint();
 const { $createError } = useErrorHandler();
+const { $api } = useApi();
 
 const $local = reactive({
   mainLoading: false,
   data: null,
   raw: null,
+  summaryLoading: false,
+  summary: null,
 });
 
 const $onFetchMain = async (_payload) => {
@@ -57,8 +62,25 @@ const $onFetchMain = async (_payload) => {
   }
 };
 
+const $onFetchSummary = async () => {
+  $local.summaryLoading = true;
+  try {
+    const _resp = await $api.get("/orders/summaries", {
+      params: { lastmonths: 0 },
+    });
+    if (_resp?.status) {
+      $local.summary = _resp.result;
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    $local.summaryLoading = false;
+  }
+};
+
 onMounted(() => {
   $onFetchMain();
+  $onFetchSummary();
 });
 
 definePageMeta({
@@ -110,6 +132,11 @@ definePageMeta({
                 href: '/admin/tour-agent/packages',
               },
               {
+                title: 'Orders',
+                icon: 'clipboard-text',
+                href: '/admin/tour-agent/orders',
+              },
+              {
                 title: 'Profile',
                 icon: 'account-group',
                 href: '/admin/tour-agent/profile',
@@ -135,6 +162,42 @@ definePageMeta({
           </n-card>
         </div>
       </n-scrollbar>
+
+      <!-- Order Summary Metrics -->
+      <n-divider title-placement="left" class="!text-primary">
+        <div class="flex items-center gap-2">
+          <atoms-icon name="chart-bar" flat class="!mb-0 !text-inherit"></atoms-icon>
+          <atoms-text span class="!text-inherit">Order Summary (All Time)</atoms-text>
+        </div>
+      </n-divider>
+      <section v-if="$local.summaryLoading" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <n-skeleton height="80px" :repeat="4" />
+      </section>
+      <section v-else-if="$local.summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <n-card size="small" class="text-center">
+          <n-statistic label="Total order">
+            <n-number-animation :from="0" :to="$local.summary?.total || 0" />
+          </n-statistic>
+        </n-card>
+        <n-card size="small" class="text-center">
+          <n-statistic label="Completed">
+            <template #prefix><span class="text-green-500">✓</span></template>
+            <n-number-animation :from="0" :to="$local.summary?.done?.total || 0" />
+          </n-statistic>
+        </n-card>
+        <n-card size="small" class="text-center">
+          <n-statistic label="Declined">
+            <template #prefix><span class="text-red-500">✗</span></template>
+            <n-number-animation :from="0" :to="$local.summary?.cancelled?.total || 0" />
+          </n-statistic>
+        </n-card>
+        <n-card size="small" class="text-center">
+          <n-statistic label="Income">
+            <template #prefix>IDR</template>
+            <n-number-animation :from="0" :to="$local.summary?.income || 0" />
+          </n-statistic>
+        </n-card>
+      </section>
 
       <n-divider title-placement="left" class="!text-primary">
         <div class="flex items-center gap-2">

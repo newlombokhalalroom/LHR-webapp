@@ -18,13 +18,14 @@ import { useUserStore } from "@/store/user";
 import { useClientStore } from "@/store/client";
 import { useProductStore } from "@/store/product";
 import { storeToRefs } from "pinia";
+import moment from "moment";
 
 const $productStore = useProductStore();
 const $clientStore = useClientStore();
 const $userStore = useUserStore();
 const { data: $dataUser } = storeToRefs($userStore);
 
-const { $createError } = useError();
+const { $createError } = useCustomError();
 const { $isClientSide, $addSeparator, $lazyFetchBasedOnViewport } = useNuxtApp();
 const $refProductWrapper = ref(null);
 const $refProductLoadBtn = ref(null);
@@ -33,6 +34,7 @@ const route = useRoute();
 const router = useRouter();
 const $local = reactive({
   term: null,
+  tripType: null, // open_trip or private_trip
   openFilter: false,
   mainLoading: false,
   mapLoading: false,
@@ -59,8 +61,9 @@ const $onFetchProduct = async (_payload) => {
       params: {
         filter: JSON.stringify({
           where: String(
-            "types.title iLIKE '%travel%'" +
-              String($local.term ? ` AND products.title iLIKE '%${$local.term}%'` : "")
+            "(types.title iLIKE '%travel%' OR types.title iLIKE '%tour%')" +
+              String($local.term ? ` AND products.title iLIKE '%${$local.term}%'` : "") +
+              String($local.tripType ? ` AND trip_details.trip_type iLIKE '%${$local.tripType}%'` : "")
           ).toLocaleLowerCase(),
           order: "products._created_date ASC",
         }),
@@ -96,8 +99,8 @@ const $meta = ref({
 
 definePageMeta({
   order: 3,
-  label: "Travel",
-  title: "Travel",
+  label: "Tour Packages",
+  title: "Tour Packages",
   navigator: ({ _user }) => {
     if (_user?.scope?.includes("admin")) return false;
     return true;
@@ -217,7 +220,7 @@ useHead({
           id="search-room"
           :disabled="$local.mainLoading"
           class="w-full md:w-auto md:grow"
-          placeholder="Search travel tour by name..."
+          placeholder="Search tour by name..."
           @keyup.enter="$onFetchProduct"
           v-model:value="$local.term"
           hide-detail
@@ -254,6 +257,19 @@ useHead({
             </div>
           </template>
         </atoms-input>
+
+        <!-- Filter for Trip Type -->
+        <n-space class="ml-auto w-full md:w-auto">
+          <n-button 
+            :type="$local.tripType === null ? 'primary' : 'default'" 
+            @click="() => { $local.tripType = null; $onFetchProduct({ page: 1, limit: 5 }); }">All</n-button>
+          <n-button 
+            :type="$local.tripType === 'Open trip' ? 'primary' : 'default'" 
+            @click="() => { $local.tripType = 'Open trip'; $onFetchProduct({ page: 1, limit: 5 }); }">Open Trip</n-button>
+          <n-button 
+            :type="$local.tripType === 'Private trip' ? 'primary' : 'default'" 
+            @click="() => { $local.tripType = 'Private trip'; $onFetchProduct({ page: 1, limit: 5 }); }">Private Trip</n-button>
+        </n-space>
       </div>
       <br />
 
@@ -284,12 +300,25 @@ useHead({
                   ></atoms-image-native>
                   <div
                     class="col-span-full md:col-span-4 p-5"
-                    @click.stop="router.push({ path: '/travel/' + _item.id })"
+                    @click.stop="router.push({ path: '/tour/' + _item.id })"
                   >
                     <div class="grid md:grid-cols-2">
                       <div class="col-span-1 order-2 md:order-1 flex flex-col h-full">
                         <div>
-                          <atoms-heading h4>{{ _item.title }}</atoms-heading>
+                          <atoms-heading h4>
+                            {{ _item.title }}
+                            <span v-if="_item.trip_type?.toLowerCase() === 'open trip'" class="text-sm font-normal text-gray-500 ml-1">
+                              <template v-if="_item.schedules?.length === 1">
+                                ({{ moment(_item.schedules[0].departure_date).format('DD MMM YYYY') }} - {{ moment(_item.schedules[0].return_date).format('DD MMM YYYY') }})
+                              </template>
+                              <template v-else-if="_item.schedules?.length > 1">
+                                (Multiple Dates Available)
+                              </template>
+                              <template v-else>
+                                (No Schedule Added)
+                              </template>
+                            </span>
+                          </atoms-heading>
                           <atoms-text caption :to="`/${_item.client?.title}/${_item.client?.id}`">{{
                             _item.client?.name
                           }}</atoms-text>
@@ -297,41 +326,23 @@ useHead({
                       </div>
                       <div class="col-span-1 order-1 md:order-2 flex gap-2 md:flex-col items-end">
                         <atoms-text caption>Starts with,</atoms-text>
-                        <n-tag size="small">
-                          <atoms-text caption
-                            >IDR {{ $addSeparator(_item.price || 0) }}/{{
-                              _item.units || "rent"
-                            }}</atoms-text
-                          >
-                        </n-tag>
+                        <div class="flex gap-2 items-center">
+                          <n-tag v-if="_item.trip_type?.toLowerCase() === 'open trip'" size="small" type="success">
+                            Open Trip
+                          </n-tag>
+                          <n-tag v-else-if="_item.trip_type?.toLowerCase() === 'private trip'" size="small" type="warning">
+                            Private Trip
+                          </n-tag>
+                          <n-tag size="small">
+                            <atoms-text caption
+                              >IDR {{ $addSeparator(_item.price || 0) }}/{{
+                                _item.units || "rent"
+                              }}</atoms-text
+                            >
+                          </n-tag>
+                        </div>
                       </div>
                     </div>
-                    <br />
-                    <n-space class="">
-                      <n-tag size="small" type="primary" class="capitalize">
-                        {{ _item.client?.title || "-" }}
-                      </n-tag>
-                      <n-tag
-                        size="small"
-                        class="capitalize"
-                        v-for="(_product_amentities, _ipa) in _item.amenities?.slice(0, 5)"
-                        :key="_ipa"
-                        >{{ _product_amentities.title }}</n-tag
-                      >
-                      <atoms-text v-if="_item.amenities?.length > 5" caption
-                        >and more...</atoms-text
-                      >
-                    </n-space>
-                    <br />
-                    <n-card>
-                      <atoms-text
-                        span
-                        v-html="
-                          _item.description?.slice(0, 100) +
-                          `${_item.description?.length > 100 ? '...' : ''}`
-                        "
-                      />
-                    </n-card>
                     <br />
                     <div class="mt-auto">
                       <n-button type="primary">Know More</n-button>

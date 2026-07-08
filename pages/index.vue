@@ -184,11 +184,11 @@ onMounted(async () => {
             </div>
           </section>
           <section
-            @click.stop="navigateTo({ path: '/travel' })"
+            @click.stop="navigateTo({ path: '/tour' })"
             class="col-span-2 row-span-2 relative top-0 left-0 rounded-md overflow-hidden !h-[300px] hover:scale-105 hover:z-10 transition-transform duration-300 ease-out cursor-pointer"
           >
             <atoms-image
-              alt="image cover of halal travel"
+              alt="image cover of halal tour"
               src="https://firebasestorage.googleapis.com/v0/b/lombok-halal-room-sandbox.appspot.com/o/assets%2Fmosque.jpeg?alt=media&token=b693e2c6-ddd0-441c-b01d-98f0770ccd21"
               class="w-full h-full"
             />
@@ -196,7 +196,7 @@ onMounted(async () => {
               class="absolute top-0 left-0 flex w-full h-full from-black bg-gradient-to-t to-transparent"
             >
               <div class="p-5 mt-auto space-y-2">
-                <atoms-heading h3>Halal Travel</atoms-heading>
+                <atoms-heading h3>Halal Tour</atoms-heading>
                 <atoms-text>Islamic Center Mosque, Mataram</atoms-text>
               </div>
             </div>

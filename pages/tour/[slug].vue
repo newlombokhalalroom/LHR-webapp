@@ -23,6 +23,8 @@ import {
   NDatePicker,
   NTabPane,
   NSelect,
+  NTimeline,
+  NTimelineItem,
 } from "naive-ui";
 import { ref, onMounted, computed } from "vue";
 import moment from "moment/min/moment-with-locales";
@@ -40,13 +42,17 @@ const $message = useMessage();
 const $loadingBar = useLoadingBar();
 const $breakpoint = useBreakpoint();
 const { $storage } = useStorage();
-const { $createError } = useError();
+const { $createError } = useCustomError();
 const $local = reactive({
   mainLoading: false,
   dataAmenities: null,
   dataPictures: null,
   dataRooms: null,
   showBooking: null,
+});
+
+provide("$setShowBooking", (_payload) => {
+  $local.showBooking = _payload;
 });
 
 const $classified = {
@@ -85,6 +91,17 @@ definePageMeta({
 </script>
 <template>
   <div>
+    <molecules-drawer
+      v-model:show="$local.showBooking"
+      height="100%"
+      :content="{
+        title: `Booking ${$local.showBooking?.title || ''}`,
+      }"
+      @closed="$local.showBooking = null"
+    >
+      <molecules-booking-tour :target="$local.showBooking" />
+    </molecules-drawer>
+
     <Head
       ><Title>Hotel {{ $productData?.result?.name || "" }}</Title></Head
     >
@@ -165,7 +182,7 @@ definePageMeta({
       <atoms-icon
         type="primary"
         name="chevron-left"
-        @click="router.push({ path: '/travel' })"
+        @click="router.push({ path: '/tour' })"
         class="-translate-y-28 !p-0 !m-0"
       ></atoms-icon>
       <n-card class="mx-auto -translate-y-24">
@@ -220,6 +237,19 @@ definePageMeta({
         <div>
           <atoms-text v-html="$productData?.result?.description" />
         </div>
+        <div v-if="$productData?.result?.trip_detail?.trip_type?.toLowerCase() === 'open trip' && $productData?.result?.schedules?.length > 0" class="mt-4">
+          <atoms-text strong class="block mb-2">Available Schedules</atoms-text>
+          <div class="space-y-2">
+             <div v-for="(schedule, idx) in $productData?.result?.schedules" :key="idx" class="p-2 border rounded border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-between items-center">
+               <div>
+                 <atoms-text caption strong class="!text-primary">{{ moment(schedule.departure_date).format("DD MMMM YYYY") }} - {{ moment(schedule.return_date).format("DD MMMM YYYY") }}</atoms-text>
+               </div>
+               <div>
+                 <n-tag type="info" size="small">{{ schedule.available_quota }} / {{ schedule.total_quota }} seats available</n-tag>
+               </div>
+             </div>
+          </div>
+        </div>
         <n-divider title-placement="left">
           <atoms-text span strong>Tour Inclusion</atoms-text>
         </n-divider>
@@ -269,6 +299,26 @@ definePageMeta({
           <atoms-text v-else>-</atoms-text>
         </div>
         <n-divider title-placement="left">
+          <atoms-text span strong>Itinerary</atoms-text>
+        </n-divider>
+        <div class="py-4">
+          <n-timeline>
+            <n-timeline-item
+              v-for="(it, index) in $productData?.result?.itineraries"
+              :key="index"
+              :title="`Day ${it.day} - ${it.time}`"
+              :content="it.activity"
+              type="info"
+            >
+              <template #footer>
+                <atoms-text caption>{{ it.description }}</atoms-text>
+              </template>
+            </n-timeline-item>
+            <n-timeline-item v-if="!$productData?.result?.itineraries?.length" title="No itineraries" content="No activities planned yet." />
+          </n-timeline>
+        </div>
+
+        <n-divider title-placement="left">
           <atoms-text span strong>Halal Services</atoms-text>
         </n-divider>
         <div>
@@ -293,6 +343,31 @@ definePageMeta({
           <atoms-text v-else>-</atoms-text>
         </div>
         <br />
+
+        <n-divider title-placement="left">
+          <atoms-text span strong>User Reviews</atoms-text>
+        </n-divider>
+        <div class="space-y-4">
+          <div v-if="$productData?.result?.reviews?.length > 0">
+            <n-card v-for="(review, index) in $productData.result.reviews" :key="index" size="small" class="mb-3 bg-gray-50 dark:bg-gray-800">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+                  {{ (review.first_name || review.username || '?').charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <atoms-text strong class="block">{{ review.first_name ? (review.first_name + ' ' + (review.last_name || '')) : review.username }}</atoms-text>
+                  <atoms-text caption class="text-gray-500">{{ moment(review._created_date).format("DD MMMM YYYY") }}</atoms-text>
+                </div>
+                <div class="ml-auto">
+                  <n-rate readonly :default-value="review.review_rate" size="small" />
+                </div>
+              </div>
+              <atoms-text class="italic">"{{ review.review_content }}"</atoms-text>
+            </n-card>
+          </div>
+          <atoms-text v-else class="text-gray-500 italic">No reviews yet for this product.</atoms-text>
+        </div>
+        <br />
       </n-card>
       <n-card class="-translate-y-12">
         <section class="grid grid-cols-2 items-center">
@@ -302,27 +377,10 @@ definePageMeta({
             <atoms-heading h4>IDR {{ $addSeparator($productData?.result?.price) }}</atoms-heading>
             <atoms-text caption class="text-primary"> (Inclusives of taxes) </atoms-text>
           </div>
-          <div class="flex justify-end">
-            <n-button
-              v-if="$productData?.result?.client"
-              type="primary"
-              @click="
-                $window.open(
-                  `https://api.whatsapp.com/send?phone=${$trim(
-                    $productData?.result?.client?.phone?.replaceAll('+', '')
-                  )}&text=Hello%2C+im+curious+about+your+package+in+LombokHalalRoom.com+which+is+${$trim(
-                    $productData?.result?.title
-                  )}+Package&type=phone_number&app_absent=0`,
-                  '_blank'
-                )
-              "
-              class=""
-              data-action="share/whatsapp/share"
-            >
-              Chat Now
-              <template #icon
-                ><atoms-icon flat name="whatsapp" class="!text-black"></atoms-icon></template
-            ></n-button>
+          <div class="flex justify-end gap-3">
+            <n-button type="info" @click="$local.showBooking = $productData?.result">
+              Book Now
+            </n-button>
           </div>
         </section>
       </n-card>

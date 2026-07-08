@@ -148,7 +148,12 @@ export const useUserStore = defineStore(_store, {
         };
 
         if (_body?.scope?.includes("admin") && !_body?.scope?.includes("super")) {
-          _body.client = (await $clientStore.get("byUser"))?.result;
+          try {
+            _body.client = (await $clientStore.get("byUser"))?.result;
+          } catch (e) {
+            console.warn("Client not found for this user", e);
+            _body.client = null;
+          }
         }
 
         if (!_credentials) {

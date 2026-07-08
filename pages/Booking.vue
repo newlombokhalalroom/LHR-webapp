@@ -15,6 +15,9 @@ import {
   NCollapseTransition,
   NTag,
   NPagination,
+  NRate,
+  NInput,
+  NModal,
   useNotification,
   useLoadingBar,
   useMessage,
@@ -34,7 +37,7 @@ const $breakpoint = useBreakpoint();
 const {
   $roles,
   $amongIncludes,
-  $addSeparato,
+  $addSeparator,
   $dateAddition,
   $dateEdit,
   $dateHours,
@@ -47,7 +50,7 @@ const { $useDbStorage } = useStorage();
 const $notification = useNotification();
 const router = useRouter();
 const { $api } = useApi();
-const { $createError } = useError();
+const { $createError } = useErrorHandler();
 const $props = defineProps({
   target: {
     type: Object,
@@ -92,7 +95,6 @@ const $local = reactive({
   mainLoading: false,
   openClientSection: null,
   openOrderItemsSection: null,
-  openPrintoutOrder: null,
   openConfirmation: null,
   selectedBooking: null,
   selectedMessage: null,
@@ -102,6 +104,12 @@ const $local = reactive({
   raw: null,
   term: null,
   page: 1,
+  showReviewModal: false,
+  reviewTarget: null,
+  reviewRate: 5,
+  reviewContent: '',
+  reviewLoading: false,
+  countdowns: {},
 });
 
 const $model = reactive({
@@ -149,45 +157,45 @@ const $onPaymentSubmit = async (_payload) => {
   $local.mainLoading = true;
   try {
     const _resp = await $api.get(`/orders/${_payload?.id}/payment`);
-    // console.log(_resp);
-
-    // const _getSnap = await $api.get("users/getMidSnapToken");
-    // const _token = _getSnap?.result?.token;
-    // console.log("hasil : ", window.snap, _token);
     if (_resp?.status && _resp?.result?.token && window?.snap?.pay) {
       window.snap.pay(_resp?.result?.token, {
         onSuccess: async function (result) {
           $notification.success({
             title: "Payment Status",
-            content: "Payment success! Please wait while we update your orders.",
+            content: "Payment successful! Updating order status...",
           });
+
+          // Manually update status for sandbox (webhook can't reach localhost)
+          try {
+            await $api.put(`/orders/${_payload?.id}/sandbox-confirm`);
+          } catch (e) {
+            console.log('Manual notification fallback:', e);
+          }
 
           $local.mainLoading = true;
           setTimeout(async () => {
+            $local.selectedSearch = $searchType.Process;
             $local.page = 1;
             await $onFetchMain();
             $local.mainLoading = false;
-          }, 3000); // delay untuk kasih waktu webhook diproses
+          }, 2000);
         },
         onPending: function (result) {
-          /* You may add your own implementation here */
           $notification.warning({
             title: "Payment Status",
             content: "Waiting for your payment",
           });
         },
         onError: function (result) {
-          /* You may add your own implementation here */
           $notification.error({
             title: "Payment Status",
             content: "Payment failed!",
           });
         },
         onClose: function () {
-          /* You may add your own implementation here */
           $notification.info({
             title: "Payment Status",
-            content: "You closed the popup without finishing the payment",
+            content: "You closed the popup without completing the payment",
           });
         },
       });
@@ -201,19 +209,48 @@ const $onPaymentSubmit = async (_payload) => {
 
 const $onSubmitBooking = async (_payload) => {
   try {
-    let orderBody = Object.assign(
-      {},
-      {
-        startDate: $dateHours(_payload?.order?.startDate, 12),
-        endDate: $dateHours(_payload?.order?.endDate, 12),
-        orderItems: Array.from(Array(_payload?.order?.amount || 1).keys())?.map((_item) => ({
-          productId: _payload?.order?.id,
-        })),
-      }
-    );
-    delete orderBody.client;
+    const orderItem = _payload?.order;
+    let orderItems = [];
+    if (orderItem?.isTour) {
+      // For tours, send 1 item with quantity = pax count
+      const item = {
+        productId: orderItem?.id,
+        quantity: orderItem?.amount || 1,
+      };
+      if (orderItem?.schedule_id) item.schedule_id = orderItem.schedule_id;
+      if (orderItem?.hotel_id) item.hotel_id = orderItem.hotel_id;
+      if (orderItem?.pickup_location) item.pickup_location = orderItem.pickup_location;
 
-    const _resp = await $api.post(`/orders/${_payload?.order?.client?.id}`, orderBody);
+      orderItems = [item];
+    } else {
+      // For others (Hotels), keep N items with quantity 1
+      orderItems = Array.from(Array(orderItem?.amount || 1).keys())?.map((_item) => {
+        const item = {
+          productId: orderItem?.id,
+          quantity: 1,
+        };
+        if (orderItem?.schedule_id) item.schedule_id = orderItem.schedule_id;
+        if (orderItem?.hotel_id) item.hotel_id = orderItem.hotel_id;
+        if (orderItem?.pickup_location) item.pickup_location = orderItem.pickup_location;
+        return item;
+      });
+    }
+    
+    let orderBody = {
+      startDate: $dateHours(orderItem?.startDate, 12),
+      endDate: $dateHours(orderItem?.endDate, 12),
+      orderItems: orderItems.map(item => {
+        const filteredItem = {};
+        for (const [key, value] of Object.entries(item)) {
+            if (value !== null && value !== undefined) {
+                filteredItem[key] = value;
+            }
+        }
+        return filteredItem;
+      }),
+    };
+
+    const _resp = await $api.post(`/orders/${orderItem?.client?.id}`, orderBody);
 
     if (_resp?.status) {
       $local.data = $local.data
@@ -346,11 +383,116 @@ const $onConfirm = async (_payload) => {
   }
 };
 
+const $onSubmitReview = async () => {
+  if (!$local.reviewTarget) return;
+  $local.reviewLoading = true;
+  try {
+    const orderId = $local.reviewTarget.orderId;
+    const productId = $local.reviewTarget.productId;
+    await $api.post(`/orders/${orderId}/reviews/${productId}`, {
+      reviewContent: $local.reviewContent,
+      reviewRate: $local.reviewRate,
+    });
+    $notification.success({
+      title: 'Success',
+      content: 'Review submitted successfully. Thank you!',
+    });
+    $local.showReviewModal = false;
+    $local.reviewTarget = null;
+    $local.reviewContent = '';
+    $local.reviewRate = 5;
+  } catch (error) {
+    $createError(error);
+  } finally {
+    $local.reviewLoading = false;
+  }
+};
+
+const $statusColor = (status) => {
+  const map = {
+    unpaid: 'error',
+    process: 'warning',
+    progress: 'info',
+    done: 'success',
+    cancelled: 'default',
+  };
+  return map[status] || 'default';
+};
+
+const $statusLabel = (status) => {
+  const map = {
+    unpaid: 'Unpaid',
+    process: 'Waiting for Confirmation',
+    progress: 'On Progress',
+    done: 'Completed',
+    cancelled: 'Cancelled',
+  };
+  return map[status] || status;
+};
+
+const PAYMENT_DEADLINE_MS = 60 * 60 * 1000; // 1 hour
+let countdownInterval = null;
+
+const $getCountdownText = (orderId) => {
+  return $local.countdowns[orderId] || '';
+};
+
+const $startCountdowns = () => {
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(async () => {
+    if ($local.selectedSearch !== $searchType.Payment) return;
+    if (!$local.data?.length) return;
+
+    const now = Date.now();
+    let needsRefresh = false;
+
+    $local.data.forEach((_item) => {
+      if (_item.status !== 'unpaid') return;
+      const created = new Date(_item._created_date).getTime();
+      const deadline = created + PAYMENT_DEADLINE_MS;
+      const remaining = deadline - now;
+
+      if (remaining <= 0) {
+        $local.countdowns[_item.id] = 'Time expired';
+        // Jangan panggil fetch ulang secara membabi buta agar tidak infinite loop
+      } else {
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        $local.countdowns[_item.id] = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+    });
+  }, 1000);
+};
+
+const $onCancelOrder = async (orderId) => {
+  if (!confirm('Are you sure you want to cancel this order?')) return;
+  $local.mainLoading = true;
+  try {
+    await $api.put(`/orders/${orderId}/cancel`);
+    $notification.success({
+      title: 'Success',
+      content: 'Order has been cancelled.',
+    });
+    $local.selectedSearch = $searchType.Cancelled;
+    $local.page = 1;
+    await $onFetchMain();
+  } catch (error) {
+    $createError(error);
+  } finally {
+    $local.mainLoading = false;
+  }
+};
+
 watch(
   () => $local.selectedSearch,
   async (_val) => {
     $local.page = 1;
-    $onFetchMain();
+    await $onFetchMain();
+    if (_val === $searchType.Payment) {
+      $startCountdowns();
+    } else if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
   }
 );
 
@@ -405,6 +547,7 @@ onUnmounted(() => {
   $local.selectedBooking = null;
   $local.selectedMessage = null;
   $loadingBar.finish();
+  if (countdownInterval) clearInterval(countdownInterval);
 });
 </script>
 <template>
@@ -530,7 +673,7 @@ onUnmounted(() => {
               <div class="space-y-5 col-span-full md:col-span-10">
                 <div class="space-y-2">
                   <atoms-text span strong>{{ data?.order?.title }}</atoms-text>
-                  <atoms-text caption>{{ data?.order?.description }}</atoms-text>
+                  <atoms-text caption v-html="data?.order?.description"></atoms-text>
                   <n-divider class="!my-2"></n-divider>
                   <div class="flex justify-between">
                     <atoms-text caption strong class="!text-primary">Room</atoms-text>
@@ -557,7 +700,10 @@ onUnmounted(() => {
                     <atoms-text caption strong class="!text-primary capitalize"
                       >Check-in</atoms-text
                     >
-                    <div class="w-1/2">
+                    <div v-if="data?.order?.client?.title?.toLowerCase()?.includes('tour')" class="w-1/2 text-right">
+                      <atoms-text span>{{ moment(data?.order?.startDate).format("DD MMMM YYYY") }}</atoms-text>
+                    </div>
+                    <div v-else class="w-1/2">
                       <atoms-input-date
                         :is-date-disabled="
                           (ts) => ts < new Date($dateHours(new Date(), 12)).getTime()
@@ -570,11 +716,14 @@ onUnmounted(() => {
                     </div>
                   </div>
 
-                  <div class="flex justify-between">
+                  <div class="flex justify-between mt-2">
                     <atoms-text caption strong class="!text-primary capitalize"
                       >Check-out (Before)</atoms-text
                     >
-                    <div class="w-1/2">
+                    <div v-if="data?.order?.client?.title?.toLowerCase()?.includes('tour')" class="w-1/2 text-right">
+                      <atoms-text span>{{ moment(data?.order?.endDate).format("DD MMMM YYYY") }}</atoms-text>
+                    </div>
+                    <div v-else class="w-1/2">
                       <atoms-input-date
                         :is-date-disabled="
                           (ts) => ts < new Date($dateHours(data?.order?.startDate, 12)).getTime()
@@ -617,12 +766,19 @@ onUnmounted(() => {
             <atoms-text caption strong class="!text-primary capitalize">Booking amount</atoms-text>
             <atoms-text span> {{ data?.order?.amount }}x</atoms-text>
           </div>
+          <div class="space-y-1" v-if="data?.order?.hotel_id && data?.order?.hotelPrice">
+            <atoms-text caption strong class="!text-primary capitalize">Hotel ({{ data?.order?.hotelName }})</atoms-text>
+            <atoms-text span>IDR {{ $addSeparator(data?.order?.hotelPrice || 0) }}</atoms-text>
+          </div>
           <div class="space-y-1">
             <atoms-text caption strong class="!text-primary capitalize">Total</atoms-text>
             <atoms-text span
               >IDR
               {{
-                $addSeparator((data?.order?.price || 0) * (data?.order?.amount || 0))
+                $addSeparator(
+                  (data?.order?.price || 0) * (data?.order?.amount || 0) +
+                  (data?.order?.hotelPrice || 0)
+                )
               }}</atoms-text
             >
           </div>
@@ -687,21 +843,7 @@ onUnmounted(() => {
       </div>
     </template>
   </molecules-drawer>
-  <molecules-drawer
-    v-model:show="$local.openPrintoutOrder"
-    :content="{
-      title: 'Printout Invoice',
-    }"
-    @closed="
-      () => {
-        $local.openPrintoutOrder = null;
-      }
-    "
-  >
-    <client-only>
-      <molecules-printout-invoice :target="$local.openPrintoutOrder" />
-    </client-only>
-  </molecules-drawer>
+
   <br />
   <atoms-container class="space-y-5">
     <atoms-heading h2>Booking</atoms-heading>
@@ -847,7 +989,7 @@ onUnmounted(() => {
             </div>
             <div class="space-y-1 col-span-full">
               <atoms-text caption strong class="!text-primary capitalize">Description</atoms-text>
-              <atoms-text class="capitalize">{{ _item.client?.description || "-" }}</atoms-text>
+              <atoms-text class="capitalize" v-html="_item.client?.description || '-'"></atoms-text>
             </div>
           </section>
         </n-collapse-transition>
@@ -867,7 +1009,7 @@ onUnmounted(() => {
                 <section class="overflow-hidden">
                   <div>
                     <atoms-text span strong>{{ __item.title }}</atoms-text>
-                    <atoms-text caption>{{ __item.description }}</atoms-text>
+                    <atoms-text caption v-html="__item.description"></atoms-text>
                     <n-divider class="!my-2"></n-divider>
                     <!-- <div class="flex justify-between">
                       <atoms-text caption strong class="!text-primary">Room</atoms-text>
@@ -920,41 +1062,86 @@ onUnmounted(() => {
             </div>
           </section>
           <br />
-          <n-button
-            v-if="_item.status == 'unpaid'"
-            type="primary"
-            class="w-full md:w-auto"
-            @click="
-              () => {
-                if (!$dataUser?.id) {
-                  $notification.warning({
-                    title: 'Attention',
-                    content: 'Please login to continue',
-                  });
-                  return;
+
+          <!-- Deadline waktu pembayaran -->
+          <n-space v-if="_item.status == 'unpaid'" align="center" class="flex-wrap">
+            <n-tag type="error" size="small" v-if="$getCountdownText(_item.id)">
+              ⏱️ {{ $getCountdownText(_item.id) }}
+            </n-tag>
+            <n-button
+              type="primary"
+              size="small"
+              :disabled="$getCountdownText(_item.id) === 'Time expired'"
+              @click="
+                () => {
+                  if (!$dataUser?.id) {
+                    $notification.warning({
+                      title: 'Attention',
+                      content: 'Please login to continue',
+                    });
+                    return;
+                  }
+                  $onPaymentSubmit(_item);
                 }
-                $onPaymentSubmit(_item);
-              }
-            "
-            >Payment</n-button
-          >
-          <!-- <n-button
-            v-else-if="String(_item.status).includes('progress')"
-            :type="'primary'"
-            class="w-full md:w-auto"
-            @click="$onConfirm(_item)"
-            >{{ "Confirm to Booking" }}</n-button
-          > -->
-          <!-- @click="$onCheckApprovalAndUpdate(_item)" -->
-          <n-button
-            v-else-if="
-              String(_item.status).includes('done') || String(_item.status).includes('progress')
-            "
-            :type="'primary'"
-            class="w-full md:w-auto"
-            @click="$local.openPrintoutOrder = _item"
-            >Printout</n-button
-          >
+              "
+              >Pay Now</n-button
+            >
+            <n-button
+              type="error"
+              size="small"
+              @click="$onCancelOrder(_item.id)"
+              >Cancel</n-button
+            >
+          </n-space>
+          <n-space v-else-if="_item.status === 'process'" align="center">
+            <n-tag :type="$statusColor(_item.status)" size="small">{{ $statusLabel(_item.status) }}</n-tag>
+            <n-button
+              size="small"
+              @click="router.push(`/booking/invoice/${_item.id}`)"
+              >View Invoice</n-button
+            >
+          </n-space>
+          <n-space v-else-if="_item.status === 'progress'" align="center">
+            <n-tag :type="$statusColor(_item.status)" size="small">{{ $statusLabel(_item.status) }}</n-tag>
+            <n-button
+              size="small"
+              @click="router.push(`/booking/invoice/${_item.id}`)"
+              >Lihat Invoice</n-button
+            >
+            <n-button
+              type="primary"
+              size="small"
+              :disabled="new Date() < new Date(_item.end_date)"
+              @click="$onConfirm(_item)"
+              >Confirm Completed</n-button
+            >
+          </n-space>
+          <n-space v-else-if="_item.status === 'done'" align="center">
+            <n-tag :type="$statusColor(_item.status)" size="small">{{ $statusLabel(_item.status) }}</n-tag>
+            <n-button
+              size="small"
+              @click="router.push(`/booking/invoice/${_item.id}`)"
+              >Lihat Invoice</n-button
+            >
+            <n-button
+              type="success"
+              size="small"
+              @click="
+                () => {
+                  $local.reviewTarget = {
+                    orderId: _item.id,
+                    productId: _item.items?.[0]?.product?.id || _item.items?.[0]?.product_id,
+                    productTitle: _item.items?.[0]?.product?.title || _item.items?.[0]?.title,
+                  };
+                  $local.showReviewModal = true;
+                }
+              "
+              >Write Review</n-button
+            >
+          </n-space>
+          <n-space v-else-if="_item.status === 'cancelled'" align="center">
+            <n-tag :type="$statusColor(_item.status)" size="small">{{ $statusLabel(_item.status) }}</n-tag>
+          </n-space>
         </section>
 
         <!-- todo: whislist -->
@@ -1028,7 +1215,7 @@ onUnmounted(() => {
                 <div class="space-y-5 col-span-full md:col-span-10">
                   <div>
                     <atoms-text span strong>{{ __item.title }}</atoms-text>
-                    <atoms-text caption>{{ __item.description }}</atoms-text>
+                    <atoms-text caption v-html="__item.description"></atoms-text>
                     <n-divider class="!my-2"></n-divider>
                     <div class="flex justify-between">
                       <atoms-text caption strong class="!text-primary">Room</atoms-text>
@@ -1099,4 +1286,42 @@ onUnmounted(() => {
     ></atoms-empty>
     <br />
   </atoms-container>
+
+  <!-- Review Modal -->
+  <n-modal
+    v-model:show="$local.showReviewModal"
+    preset="card"
+    title="Write a Review"
+    :style="{ maxWidth: '500px' }"
+    :mask-closable="false"
+  >
+    <div class="space-y-4">
+      <div>
+        <atoms-text caption strong class="!text-primary">Package</atoms-text>
+        <atoms-text>{{ $local.reviewTarget?.productTitle || '-' }}</atoms-text>
+      </div>
+      <div>
+        <atoms-text caption strong class="!text-primary">Rating</atoms-text>
+        <br />
+        <n-rate v-model:value="$local.reviewRate" :count="5" allow-half />
+      </div>
+      <div>
+        <atoms-text caption strong class="!text-primary">Review</atoms-text>
+        <n-input
+          v-model:value="$local.reviewContent"
+          type="textarea"
+          placeholder="Share your experience..."
+          :rows="4"
+        />
+      </div>
+      <n-button
+        type="primary"
+        block
+        :loading="$local.reviewLoading"
+        :disabled="!$local.reviewContent || $local.reviewContent.length < 5"
+        @click="$onSubmitReview"
+        >Submit Review</n-button
+      >
+    </div>
+  </n-modal>
 </template>

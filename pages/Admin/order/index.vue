@@ -49,7 +49,6 @@ const $breakpoint = useBreakpoint();
 const $local = reactive({
   term: null,
   openOrderItemsSection: null,
-  openPrintoutOrder: null,
   selectedSearch: $statusType.History,
   mainLoading: false,
   openFilter: false,
@@ -242,21 +241,7 @@ definePageMeta({
 });
 </script>
 <template>
-  <molecules-drawer
-    v-model:show="$local.openPrintoutOrder"
-    :content="{
-      title: 'Printout Invoice',
-    }"
-    @closed="
-      () => {
-        $local.openPrintoutOrder = null;
-      }
-    "
-  >
-    <client-only>
-      <molecules-printout-invoice :target="$local.openPrintoutOrder" />
-    </client-only>
-  </molecules-drawer>
+
   <atoms-container>
     <br />
     <n-card :title="`${moment($dateHours()).format('dddd, DD MMMM YYYY')}`">
@@ -450,13 +435,7 @@ definePageMeta({
               >Mark as Complete</n-button
             > -->
           </n-space>
-          <n-button
-            v-else-if="String(_item.status).includes('done')"
-            :type="'primary'"
-            class="w-full md:w-auto"
-            @click="$local.openPrintoutOrder = _item"
-            >Printout</n-button
-          >
+
         </n-card>
       </section>
 

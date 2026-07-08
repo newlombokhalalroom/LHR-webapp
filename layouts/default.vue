@@ -33,7 +33,9 @@ const $onValidate = async () => {
     }
   } catch (error) {
     await $userStore.logout();
-    location.reload();
+    if (route.fullPath?.includes("admin")) {
+      await navigateTo("/");
+    }
   } finally {
     $local.mainLoading = false;
   }
