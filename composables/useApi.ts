@@ -11,6 +11,7 @@ export default function () {
     "Content-type": "application/json",
   };
 
+  // US-15 Melakukan Pendaftaran Mitra - Pemanggilan endpoint API
   const $api = axios.create({
     baseURL: $config.public.apiUrl as string,
     headers: $headers,

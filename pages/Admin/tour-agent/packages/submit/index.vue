@@ -88,6 +88,7 @@ const $model = reactive({
   description: null,
   pictures: null,
   // UPDATE US-03 - KISUL
+  // Trip Detail dengan default value 'Open trip'
   trip_detail: {
     trip_type: "Open trip",
   },
@@ -449,6 +450,7 @@ const $onSubmit = async () => {
         );
       }
 
+      // US-03 Mengelola Data Paket Wisata & US-04 Mengelola Jadwal & Kuota (Open Trip) - proses pemanggilan apipost product
       if (_policiesToSubmit?.length > 0) {
         await $productStore.post(`${route.params.id}/policies`, {
           policies: _policiesToSubmit?.map(({ title, details, ..._item }) => ({ title, details })),
@@ -680,6 +682,7 @@ definePageMeta({
           <atoms-text span>Trip Details & Itineraries</atoms-text>
         </n-divider>
         <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-5 mb-5">
+          <!-- Pemilihan Jenis Trip -->
           <atoms-select
             class="col-span-2 lg:col-span-1"
             label="Trip Type"
@@ -732,6 +735,7 @@ definePageMeta({
         </div>
       </section>
 
+      <!-- US-04 Mengelola Jadwal & Kuota (Open Trip) - form pengisian schedule atau jadwal open trip nya-->
       <!-- Open Trip Schedules -->
       <section v-if="$model.trip_detail.trip_type === 'Open trip'">
         <n-divider title-placement="left" class="col-span-full">

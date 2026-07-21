@@ -156,8 +156,10 @@ const $startDate = computed({
 const $onPaymentSubmit = async (_payload) => {
   $local.mainLoading = true;
   try {
+    // US-09 Melakukan Pembayaran – Panggil Midtrans
     const _resp = await $api.get(`/orders/${_payload?.id}/payment`);
     if (_resp?.status && _resp?.result?.token && window?.snap?.pay) {
+      // US-09 Melakukan Pembayaran – pop up Midtrans
       window.snap.pay(_resp?.result?.token, {
         onSuccess: async function (result) {
           $notification.success({
@@ -167,6 +169,7 @@ const $onPaymentSubmit = async (_payload) => {
 
           // Manually update status for sandbox (webhook can't reach localhost)
           try {
+            // US-09 Melakukan Pembayaran – Update Status Pesanan menjadi sukses secara MANUAL SANDBOX
             await $api.put(`/orders/${_payload?.id}/sandbox-confirm`);
           } catch (e) {
             console.log('Manual notification fallback:', e);
@@ -220,6 +223,7 @@ const $onSubmitBooking = async (_payload) => {
       if (orderItem?.schedule_id) item.schedule_id = orderItem.schedule_id;
       if (orderItem?.hotel_id) item.hotel_id = orderItem.hotel_id;
       if (orderItem?.pickup_location) item.pickup_location = orderItem.pickup_location;
+      if (orderItem?.participants) item.participants = orderItem.participants;
 
       orderItems = [item];
     } else {
@@ -232,6 +236,7 @@ const $onSubmitBooking = async (_payload) => {
         if (orderItem?.schedule_id) item.schedule_id = orderItem.schedule_id;
         if (orderItem?.hotel_id) item.hotel_id = orderItem.hotel_id;
         if (orderItem?.pickup_location) item.pickup_location = orderItem.pickup_location;
+        if (orderItem?.participants) item.participants = orderItem.participants;
         return item;
       });
     }
@@ -250,6 +255,7 @@ const $onSubmitBooking = async (_payload) => {
       }),
     };
 
+    // US-09 Melakukan Pembayaran Online - pemanggilan API untuk eksekusi pensanan kedalam database ketika pesanan sudah dibayar
     const _resp = await $api.post(`/orders/${orderItem?.client?.id}`, orderBody);
 
     if (_resp?.status) {
@@ -383,6 +389,7 @@ const $onConfirm = async (_payload) => {
   }
 };
 
+// US-13 Memberikan Ulasan & Rating - pemanggilan api review/ulasan
 const $onSubmitReview = async () => {
   if (!$local.reviewTarget) return;
   $local.reviewLoading = true;
@@ -755,6 +762,19 @@ onUnmounted(() => {
                       />
                     </div>
                   </div>
+
+                  <div class="flex justify-between mt-2" v-if="data?.order?.participants?.length">
+                    <atoms-text caption strong class="!text-primary capitalize"
+                      >Detail Participants</atoms-text
+                    >
+                    <div class="w-1/2 text-right">
+                      <atoms-text span class="text-xs text-gray-500">
+                        <span v-for="(p, i) in data.order.participants" :key="i">
+                          {{ p.name }} ({{ p.phone || '-' }}){{ i < data.order.participants.length - 1 ? ', ' : '' }}
+                        </span>
+                      </atoms-text>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -1103,11 +1123,14 @@ onUnmounted(() => {
           </n-space>
           <n-space v-else-if="_item.status === 'progress'" align="center">
             <n-tag :type="$statusColor(_item.status)" size="small">{{ $statusLabel(_item.status) }}</n-tag>
+            <!-- US-10 Melihat Invoice Pembayawan - Tombol Akses Invoice -->
             <n-button
               size="small"
               @click="router.push(`/booking/invoice/${_item.id}`)"
-              >Lihat Invoice</n-button
+              >View Invoice</n-button
             >
+
+            <!-- US-12 Memperbarui Status Pesanan - Tombol Konfirmasi Pesanan Selesai (Wisatawan) -->
             <n-button
               type="primary"
               size="small"
@@ -1116,6 +1139,8 @@ onUnmounted(() => {
               >Confirm Completed</n-button
             >
           </n-space>
+
+          <!-- US-13 Memberikan Ulasan & Rating -->
           <n-space v-else-if="_item.status === 'done'" align="center">
             <n-tag :type="$statusColor(_item.status)" size="small">{{ $statusLabel(_item.status) }}</n-tag>
             <n-button
@@ -1123,6 +1148,7 @@ onUnmounted(() => {
               @click="router.push(`/booking/invoice/${_item.id}`)"
               >Lihat Invoice</n-button
             >
+
             <n-button
               type="success"
               size="small"
@@ -1287,7 +1313,7 @@ onUnmounted(() => {
     <br />
   </atoms-container>
 
-  <!-- Review Modal -->
+  <!-- US-13 Memberikan Ulasan & Rating - komponen modal ulasan -->
   <n-modal
     v-model:show="$local.showReviewModal"
     preset="card"

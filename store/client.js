@@ -13,6 +13,7 @@ export const useClientStore = defineStore(_store, {
     data: null,
   }),
   actions: {
+
     async post(_path = null, _body) {
       const { $api } = useApi();
       let __url = `/${this.collection}`;
@@ -47,6 +48,7 @@ export const useClientStore = defineStore(_store, {
       }
       return await $api.delete(__url, _options);
     },
+    // US-15 Melakukan Pendaftaran Mitra - Pemanggilan fungsi post untuk menyimpan data client
     async register(_payload) {
       const { $api } = useApi();
       return await $api.post(`/${this.collection}`, _payload);

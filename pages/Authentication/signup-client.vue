@@ -16,6 +16,7 @@ import { useVuelidate } from "@vuelidate/core";
 import { useUserStore } from "@/store/user";
 import { v4 } from "uuid";
 
+// pemanggilan endpoint clients
 import { useClientStore } from "@/store/client";
 import { storeToRefs } from "pinia";
 
@@ -204,7 +205,7 @@ const $form = useVuelidate(
 );
 
 const $isLoading = computed(() => $local.mainLoading || false);
-
+// US-15 Melakukan Pendaftaran Mitra - mendapatkan data type client
 const $onFetchClientTypes = async () => {
   $local.mainLoading = true;
   try {
@@ -280,6 +281,7 @@ const $onSubmit = async (e) => {
       password: $trim($model.password),
     });
 
+    // US-15 Melakukan Pendaftaran Mitra
     // todo:register client information
     const _respClient = await $clientStore.register({
       id: clientId,
@@ -482,6 +484,10 @@ onUnmounted(() => {
           <n-alert v-if="$local.errors" type="error" class="mb-5">
             {{ $local.errors }}
           </n-alert>
+
+          <!-- 
+            US-15 Melakukan Pendaftaran Mitra - Form untuk input data mitra
+          -->
 
           <n-form @submit="$onSubmit" class="grid grid-cols-1 gap-5 md:grid-cols-2">
             <atoms-input

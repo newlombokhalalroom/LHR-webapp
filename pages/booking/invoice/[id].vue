@@ -20,6 +20,7 @@ const $local = reactive({
   invoice: null,
 });
 
+// US-10 MelihatInvoice pembayaran - pemanggilan API untuk mendapatkan detail invoice
 const $onFetchInvoice = async () => {
   $local.mainLoading = true;
   try {
@@ -77,6 +78,7 @@ definePageMeta({
 
         <n-divider />
 
+        <!-- US-10 Melihat invoice pembayaran - Menampilkan Informasi Umum Invoice -->
         <!-- Order Info -->
         <div class="grid md:grid-cols-2 gap-6 mb-6">
           <div class="space-y-2">
@@ -130,12 +132,24 @@ definePageMeta({
               </thead>
               <tbody>
                 <template v-for="(_item, _i) in $local.invoice.orderItems" :key="_i">
-                  <tr class="align-top" :class="{ 'border-b dark:border-gray-800': !_item.hotel }">
+                  <tr class="align-top" :class="{ 'border-b dark:border-gray-800': !_item.hotel && !_item.participants?.length && !_item.pickup_location }">
                     <td class="py-2 px-1">{{ _i + 1 }}</td>
                     <td class="py-2 px-1">{{ _item.title || '-' }}</td>
                     <td class="text-center py-2 px-1">{{ _item.quantity || 1 }}</td>
                     <td class="text-right py-2 px-1">IDR {{ $addSeparator(Number(_item.price || 0)) }}</td>
                     <td class="text-right py-2 px-1">IDR {{ $addSeparator(Number(_item.price || 0) * Number(_item.quantity || 1)) }}</td>
+                  </tr>
+                  <tr v-if="_item.pickup_location" class="align-top text-gray-500" :class="{ 'border-b dark:border-gray-800': !_item.hotel && !_item.participants?.length }">
+                    <td class="py-1 px-1"></td>
+                    <td colspan="4" class="py-1 px-1 pl-4 border-l-2 border-primary">
+                      Pickup Location: {{ _item.pickup_location }}
+                    </td>
+                  </tr>
+                  <tr v-if="_item.participants?.length" class="align-top text-gray-500" :class="{ 'border-b dark:border-gray-800': !_item.hotel }">
+                    <td class="py-1 px-1"></td>
+                    <td colspan="4" class="py-1 px-1 pl-4 border-l-2 border-primary">
+                      Participants: <span v-for="(p, i) in _item.participants" :key="i">{{ p.name }} ({{ p.phone || '-' }}){{ i < _item.participants.length - 1 ? ', ' : '' }}</span>
+                    </td>
                   </tr>
                   <tr v-if="_item.hotel" class="border-b dark:border-gray-800 align-top text-gray-500">
                     <td class="py-2 px-1"></td>

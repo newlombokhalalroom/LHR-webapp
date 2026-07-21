@@ -50,8 +50,7 @@ const router = useRouter();
 const { $api } = useApi();
 const $onClose = inject("$onClose");
 const { $createError } = useError();
-const { $roles, $amongIncludes, $dateAddition, $dateEdit, $dateHours, $dateSubstract } =
-  useNuxtApp();
+const { $roles, $amongIncludes, $dateAddition, $dateEdit, $dateHours, $dateSubstract } = useNuxtApp();
 const $props = defineProps({
   target: {
     type: Object,
@@ -73,6 +72,7 @@ const $local = reactive({
   includeHotel: false,
   pickup_location: null,
   partnerHotels: [],
+  participants: [],
 });
 
 const $isPrivate = computed(() => $props.target?.trip_detail?.trip_type?.toLowerCase() === 'private trip');
@@ -129,6 +129,21 @@ watch(() => $local.schedule_id, (newVal) => {
       $local.checkIn = $dateHours(new Date(selected.departure_date), 12);
       $local.checkOut = $dateHours(new Date(selected.return_date), 12);
     }
+  }
+}, { immediate: true });
+
+watch(() => $local.quantity, (newVal) => {
+  if (newVal > 1) {
+    const toAdd = newVal - 1 - $local.participants.length;
+    if (toAdd > 0) {
+      for (let i = 0; i < toAdd; i++) {
+        $local.participants.push({ name: "", phone: "" });
+      }
+    } else if (toAdd < 0) {
+      $local.participants.splice(newVal - 1);
+    }
+  } else {
+    $local.participants = [];
   }
 }, { immediate: true });
 
@@ -570,6 +585,8 @@ const $onSubmitBooking = async (_payload) => {
             <div v-else-if="$availableSchedules.length === 1" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
                <atoms-text span strong class="text-primary">{{ moment($availableSchedules[0].departure_date).format('DD MMM YYYY') }} - {{ moment($availableSchedules[0].return_date).format('DD MMM YYYY') }}</atoms-text>
                <br/>
+
+               <!-- US-06 Memesan Paket Open Trip (Validasi Kuota) -->
                <atoms-text caption>{{ $availableSchedules[0].available_quota }} seats available</atoms-text>
             </div>
             <div>
@@ -580,7 +597,16 @@ const $onSubmitBooking = async (_payload) => {
                 {{ $availableSchedules.find(s => s.id === $local.schedule_id)?.available_quota }} seats left for this schedule
               </atoms-text>
             </div>
+            <div v-if="$local.quantity > 1" class="col-span-full space-y-2 mt-2">
+              <atoms-text caption strong class="!text-primary">Participant Details (Other than you)</atoms-text>
+              <div v-for="i in ($local.quantity - 1)" :key="i" class="flex gap-2 items-center">
+                 <atoms-text class="w-16">Pax {{ i + 1 }}</atoms-text>
+                 <n-input v-model:value="$local.participants[i - 1].name" :placeholder="'Full name for pax ' + (i + 1)" />
+                 <n-input v-model:value="$local.participants[i - 1].phone" :placeholder="'Phone'" />
+              </div>
+            </div>
             <div>
+              <!-- US-08 input Lokasi Penjemputan -->
               <atoms-text caption strong class="!text-primary">Pickup Location</atoms-text>
               <n-input v-model:value="$local.pickup_location" placeholder="e.g. Lombok International Airport" />
             </div>
@@ -611,10 +637,19 @@ const $onSubmitBooking = async (_payload) => {
               <atoms-text caption strong class="!text-primary">Quantity (Pax)</atoms-text>
               <n-input-number v-model:value="$local.quantity" :min="1" />
             </div>
+            <div v-if="$local.quantity > 1" class="col-span-full space-y-2 mt-2">
+              <atoms-text caption strong class="!text-primary">Participant Details (Other than you)</atoms-text>
+              <div v-for="i in ($local.quantity - 1)" :key="i" class="flex gap-2 items-center">
+                 <atoms-text class="w-16">Pax {{ i + 1 }}</atoms-text>
+                 <n-input v-model:value="$local.participants[i - 1].name" :placeholder="'Full name for pax ' + (i + 1)" />
+                 <n-input v-model:value="$local.participants[i - 1].phone" :placeholder="'Phone'" />
+              </div>
+            </div>
             <div class="col-span-full flex items-center gap-3 mt-2">
               <atoms-text caption strong class="!text-primary">Include Hotel Accommodation?</atoms-text>
               <n-switch v-model:value="$local.includeHotel" />
             </div>
+            <!-- US-07 Melakukan Kustomisasi Private Trip (Hitung Harga) - Kostumisasi akomodasi -->
             <div v-if="$local.includeHotel" class="col-span-full space-y-2">
               <atoms-text caption strong class="!text-primary">Select Hotel</atoms-text>
               <n-select
@@ -628,12 +663,13 @@ const $onSubmitBooking = async (_payload) => {
                 </atoms-text>
               </n-alert>
             </div>
-            <div v-else class="col-span-full">
+            <div class="col-span-full mt-2">
               <atoms-text caption strong class="!text-primary">Pickup Location</atoms-text>
               <n-input v-model:value="$local.pickup_location" placeholder="e.g. Your current hotel or airport" />
             </div>
           </div>
           <br />
+          <!-- US-07 Melakukan Kustomisasi Private Trip (Hitung Harga) - Hitung Total Harga -->
           <div class="bg-gradient p-5 grid md:grid-cols-2 md:gap-5 rounded-md">
             <div class="space-y-1">
               <atoms-text caption strong class="!text-primary capitalize">Quantity</atoms-text>
@@ -642,11 +678,13 @@ const $onSubmitBooking = async (_payload) => {
                   IDR {{ $addSeparator($props.target?.price || 0) || "-" }} x ({{ $local.quantity }})
                   {{ $props.target?.units || "Package" }}
                 </atoms-text>
+                <!-- US-07 Melakukan Kustomisasi Private Trip (Hitung Harga) - Hitung Harga Akomodasi -->
                 <atoms-text v-if="$local.hotel_id" class="capitalize text-sm text-gray-500">
                   + IDR {{ $addSeparator($local.partnerHotels.find(h => h.id === $local.hotel_id)?.price_per_night || 0) }} x ({{ Math.max(1, $tripDays - 1) }}) Nights x ({{ Math.ceil($local.quantity / 2) }}) Room(s)
                 </atoms-text>
               </div>
             </div>
+            <!-- US-07 Melakukan Kustomisasi Private Trip (Hitung Harga) - Hitung Total Harga -->
             <div class="space-y-1">
               <atoms-text caption strong class="!text-primary capitalize">Total Price</atoms-text>
               <atoms-text class="capitalize"
@@ -674,6 +712,7 @@ const $onSubmitBooking = async (_payload) => {
         type="primary"
         @click="
           () => {
+            // US-07 Melakukan Kustomisasi Private Trip (Hitung Harga) - Mengirim Data ke dalam local storage untuk disimpan didalam keranjang
             $onSubmitBooking({
               ...$props.target,
               price: Number($props.target?.price),
@@ -685,6 +724,7 @@ const $onSubmitBooking = async (_payload) => {
               pickup_location: $local.pickup_location,
               hotelPrice: $local.hotel_id ? ($local.partnerHotels.find(h => h.id === $local.hotel_id)?.price_per_night || 0) * Math.max(1, $tripDays - 1) * Math.ceil($local.quantity / 2) : 0,
               hotelName: $local.hotel_id ? $local.partnerHotels.find(h => h.id === $local.hotel_id)?.name : null,
+              participants: $local.participants,
               isTour: true,
             });
           }

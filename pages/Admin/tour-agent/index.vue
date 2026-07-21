@@ -13,6 +13,7 @@ import {
   NSpace,
   NGi,
   NGrid,
+  NBadge,
   useNotification,
 } from "naive-ui";
 import moment from "moment";
@@ -62,6 +63,7 @@ const $onFetchMain = async (_payload) => {
   }
 };
 
+// US-14 Melihat Laporan Transaksi (Dashboard)
 const $onFetchSummary = async () => {
   $local.summaryLoading = true;
   try {
@@ -148,13 +150,21 @@ definePageMeta({
               },
             ]"
             :key="_ishortcut"
-            class="w-[10rem] h-[10rem] hover:shadow-md !cursor-pointer"
+            class="w-[10rem] h-[10rem] hover:shadow-md !cursor-pointer relative"
             @click="
               () => {
                 $router.push({ path: _shortcut.href });
               }
             "
           >
+          <!-- notfikasi untuk menampilkan badge jika ada order yang sedang diproses -->
+            <div
+              v-if="_shortcut.title === 'Orders' && (($local.summary?.process?.total || 0) + ($local.summary?.progress?.total || 0)) > 0"
+              class="absolute top-3 right-3 z-10 scale-125 origin-top-right pointer-events-none"
+            >
+              <n-badge :value="($local.summary?.process?.total || 0) + ($local.summary?.progress?.total || 0)" />
+            </div>
+
             <div class="flex flex-col items-center justify-center h-full w-full gap-5 pt-1">
               <atoms-icon class="!text-inherit" :name="_shortcut.icon" flat size="50"></atoms-icon>
               <atoms-text class="!text-inherit">{{ _shortcut.title }}</atoms-text>
@@ -163,6 +173,7 @@ definePageMeta({
         </div>
       </n-scrollbar>
 
+      <!-- US-14 Melihat Laporan Transaksi (Dashboard) -->
       <!-- Order Summary Metrics -->
       <n-divider title-placement="left" class="!text-primary">
         <div class="flex items-center gap-2">
@@ -265,7 +276,7 @@ definePageMeta({
                       },
                     ]"
                   >
-                    <n-button size="small" secondary round type="primary">package detail</n-button>
+                    <n-button size="small" round type="primary" class="!text-white">package detail</n-button>
                   </n-dropdown>
                 </div>
               </div>

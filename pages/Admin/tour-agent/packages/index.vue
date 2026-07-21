@@ -224,7 +224,7 @@ definePageMeta({
                       },
                     ]"
                   >
-                    <n-button size="small" secondary round type="primary" class="!text-primary">package detail</n-button>
+                    <n-button size="small" round type="primary" class="!text-white">package detail</n-button>
                   </n-dropdown>
                 </div>
               </div>
@@ -232,14 +232,6 @@ definePageMeta({
                 <n-tag size="small" type="primary" class="capitalize">
                   {{ _product.client?.title || "-" }}
                 </n-tag>
-                <n-tag
-                  size="small"
-                  class="capitalize"
-                  v-for="(_product_amentities, _ipa) in _product.amenities?.slice(0, 5)"
-                  :key="_ipa"
-                  >{{ _product_amentities.title }}</n-tag
-                >
-                <atoms-text v-if="_product.amenities?.length > 5" caption>and more...</atoms-text>
               </n-space>
               <br />
               <!-- <n-card>

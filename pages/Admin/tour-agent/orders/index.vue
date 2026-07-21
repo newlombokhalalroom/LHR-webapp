@@ -26,6 +26,7 @@ const { $api } = useApi();
 const { $createError } = useErrorHandler();
 
 const $statusFilters = {
+  // US-11 Memvalidasi Pesanan Masuk & US-12 Memperbarui Status Pesanan - Filter status pesanan
   All: "1=1",
   Pending: "orders.status='process'",
   Accepted: "orders.status='progress'",
@@ -64,6 +65,7 @@ const $statusLabel = (status) => {
   return map[status] || status;
 };
 
+//US-11 Memvalidasi Pesanan Masuk & US-12 Memperbarui Status Pesanan - Pemanggilan API 
 const $onFetchOrders = async (_payload) => {
   $local.mainLoading = true;
   try {
@@ -89,6 +91,7 @@ const $onFetchOrders = async (_payload) => {
   }
 };
 
+// US-11 Memvalidasi Pesanan Masuk & US-12 Memperbarui Status Pesanan - Pemanggilan API Konfirmasi Pesanan diterima
 const $onAcceptOrder = async (orderId) => {
   if (!confirm("Are you sure you want to accept this order?")) return;
   $local.actionLoading = orderId;
@@ -106,6 +109,7 @@ const $onAcceptOrder = async (orderId) => {
   }
 };
 
+// US-11 Memvalidasi Pesanan Masuk & US-12 Memperbarui Status Pesanan - Pemanggilan API Konfirmasi Pesanan ditolak
 const $onDeclineOrder = async (orderId) => {
   if (!confirm("Are you sure you want to decline this order? The funds will be refunded to the tourist's balance."))
     return;
@@ -210,6 +214,10 @@ definePageMeta({
               <div>
                 <atoms-text caption strong class="!text-primary">Tourist</atoms-text>
                 <atoms-text>{{ _order.user?.first_name ? (_order.user.first_name + ' ' + (_order.user.last_name || '')) : (_order.user?.username || _order.user_details?.first_name || "-") }}</atoms-text>
+                <div v-if="_order.user?.phone || _order.user?.email">
+                  <atoms-text caption class="block text-gray-500">📞 {{ _order.user?.phone || "-" }}</atoms-text>
+                  <atoms-text caption class="block text-gray-500">✉️ {{ _order.user?.email || "-" }}</atoms-text>
+                </div>
               </div>
               <div>
                 <atoms-text caption strong class="!text-primary">Date</atoms-text>
@@ -241,6 +249,8 @@ definePageMeta({
                   <atoms-text v-if="_item?.pickup_location" caption class="block text-gray-500 mt-1"
                     >📍 Pickup: {{ _item.pickup_location }}</atoms-text
                   >
+                  <atoms-text v-if="_item?.participants?.length" caption class="block text-gray-500 mt-1"
+                    >👥 Pax Names: <span v-for="(p, i) in _item.participants" :key="i">{{ p.name }} ({{ p.phone || '-' }}){{ i < _item.participants.length - 1 ? ', ' : '' }}</span></atoms-text>
                   <div v-if="_item?.review" class="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
                     <atoms-text caption strong class="!text-primary">Review ({{ _item.review.review_rate }} ⭐)</atoms-text>
                     <atoms-text caption class="block italic">"{{ _item.review.review_content }}"</atoms-text>
@@ -256,6 +266,7 @@ definePageMeta({
 
           <n-divider class="!my-3" />
 
+          <!-- US-11 Memvalidasi Pesanan Masuk & US-12 Memperbarui Status Pesanan -->
           <!-- Actions only for 'process' status -->
           <n-space v-if="_order.status === 'process'">
             <n-button

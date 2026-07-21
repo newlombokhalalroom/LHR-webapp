@@ -93,6 +93,7 @@ const columns = [
   },
 ];
 
+// US-05 Mengatur Data Hotel Partner dan Harga Hotel Partner - Pemanggilan api Get My Hotel Partner
 const $onFetchMain = async () => {
   $local.mainLoading = true;
   try {
@@ -126,6 +127,7 @@ const $onEdit = (row) => {
   $local.showModal = true;
 };
 
+// 3.	US-05 Mengatur Data Hotel Partner dan Harga Hotel Partner - Pemanggilan method untuk edit dan menyimpan data hotel partner
 const $onSubmit = async () => {
   $local.submitLoading = true;
   try {

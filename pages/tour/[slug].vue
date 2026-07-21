@@ -25,6 +25,7 @@ import {
   NSelect,
   NTimeline,
   NTimelineItem,
+  NRate,
 } from "naive-ui";
 import { ref, onMounted, computed } from "vue";
 import moment from "moment/min/moment-with-locales";
@@ -61,6 +62,8 @@ const $classified = {
   Excluded: "excluded",
 };
 
+// proses pemanggilan API untuk rendering data paket
+// US-02 Melihat Detail Paket & Itinerary
 const {
   data: $productData,
   error: $productError,
@@ -70,6 +73,17 @@ const {
   method: "get",
   key: `products/${route.params.slug}`,
   watch: false,
+});
+
+const $averageRating = computed(() => {
+  const reviews = $productData.value?.result?.reviews;
+  if (!reviews?.length) return 0;
+  const total = reviews.reduce((acc, curr) => acc + Number(curr.review_rate), 0);
+  return (total / reviews.length).toFixed(1);
+});
+
+const $totalReviews = computed(() => {
+  return $productData.value?.result?.reviews?.length || 0;
 });
 
 const $getSpesificAmenities = (_items, _target) =>
@@ -91,6 +105,7 @@ definePageMeta({
 </script>
 <template>
   <div>
+    <!-- US-06 & US-07 - Mengakses halaman antarmuka formulir pemesanan (Menampilkan Halaman Drawer) - pemanggilan molekul bookingTour.vue -->
     <molecules-drawer
       v-model:show="$local.showBooking"
       height="100%"
@@ -217,15 +232,15 @@ definePageMeta({
             <atoms-heading class="capitalize">
               {{ $productData?.result?.title }}
             </atoms-heading>
+            <div class="flex items-center gap-2 mb-2 mt-1">
+               <n-rate readonly :value="Number($averageRating)" allow-half size="small" />
+               <atoms-text caption class="text-gray-500 font-medium">{{ $averageRating }} / 5.0 ({{ $totalReviews }} reviews)</atoms-text>
+            </div>
             <br />
             <atoms-text class="mb-1" caption
               >Posted
               {{ moment($productData?.result?._created_date).format("DD MMMM YYYY") }}</atoms-text
             >
-            <!-- <n-space>
-              <n-tag size="small" type="primary"> Halal Certified </n-tag>
-              <n-tag size="small"> Hotel </n-tag></n-space
-            > -->
           </div>
         </div>
       </n-card>
@@ -267,7 +282,7 @@ definePageMeta({
               class="space-y-1"
             >
               <atoms-text caption strong class="!text-primary capitalize"
-                >{{ _amenity.category }}
+                >Include
               </atoms-text>
               <atoms-text class="capitalize">{{ _amenity.title || "-" }}</atoms-text>
             </div>
@@ -344,6 +359,7 @@ definePageMeta({
         </div>
         <br />
 
+        <!-- US-13 Memberikan Ulasan & Rating -->
         <n-divider title-placement="left">
           <atoms-text span strong>User Reviews</atoms-text>
         </n-divider>
